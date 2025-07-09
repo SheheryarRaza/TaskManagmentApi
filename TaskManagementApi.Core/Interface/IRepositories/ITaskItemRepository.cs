@@ -12,7 +12,7 @@ namespace TaskManagementApi.Core.Interface.IRepositories
         Task<IEnumerable<TaskItem>> GetAllTasksAsync();
         Task<TaskItem?> GetTaskByIdAsync(int id);
         Task AddTaskAsync(TaskItem taskItem);
-        Task UpdateTaskAsync(TaskItem taskItem);
+        Task<bool> UpdateTaskAsync(TaskItem taskItem);
         Task DeleteTaskAsync(TaskItem taskItem);
         Task<bool> TaskItemExistsAsync(int id);
     }

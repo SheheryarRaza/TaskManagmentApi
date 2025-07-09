@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using TaskManagementApi.Core.Data;
 using TaskManagementApi.Core.Entities;
 using TaskManagementApi.Core.Interface.IRepositories;
@@ -18,34 +19,35 @@ namespace TaskManagementApi.Core.Repositories
             _context = context;
         }
 
-        public Task AddTaskAsync(TaskItem taskItem)
+        public async Task<IEnumerable<TaskItem>> GetAllTasksAsync()
         {
-            throw new NotImplementedException();
+            return await _context.TaskItems.ToListAsync();
         }
 
-        public Task DeleteTaskAsync(TaskItem taskItem)
+        public async Task<TaskItem?> GetTaskByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            return await _context.TaskItems.FindAsync(id);
         }
 
-        public Task<IEnumerable<TaskItem>> GetAllTasksAsync()
+        public async Task AddTaskAsync(TaskItem taskItem)
         {
-            throw new NotImplementedException();
+            _context.TaskItems.Add(taskItem);
         }
 
-        public Task<TaskItem?> GetTaskByIdAsync(int id)
+        public async Task DeleteTaskAsync(TaskItem taskItem)
         {
-            throw new NotImplementedException();
+            _context.TaskItems.Remove(taskItem);
         }
 
-        public Task<bool> TaskItemExistsAsync(int id)
+        public async Task<bool> TaskItemExistsAsync(int id)
         {
-            throw new NotImplementedException();
+            return await _context.TaskItems.AnyAsync(e => e.Id == id);
         }
 
-        public Task UpdateTaskAsync(TaskItem taskItem)
+        public async Task<bool> UpdateTaskAsync(TaskItem taskItem)
         {
-            throw new NotImplementedException();
+            _context.TaskItems.Update(taskItem);
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }
