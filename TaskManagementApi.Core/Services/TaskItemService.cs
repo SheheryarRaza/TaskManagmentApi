@@ -17,29 +17,59 @@ namespace TaskManagementApi.Core.Services
         {
             _unitOfWork = unitOfWork;
         }
-        public Task<TaskItem> CreateTaskAsync(TaskItem taskItem)
+        public async Task<TaskItem> CreateTaskAsync(TaskItem taskItem)
         {
-            throw new NotImplementedException();
+            taskItem.CreatedAt = DateTime.UtcNow;
+            taskItem.UpdatedAt = DateTime.UtcNow;
+
+            await _unitOfWork.TaskItemRepository.AddTaskAsync(taskItem);
+            await _unitOfWork.SaveChangesAsync();
+
+            return taskItem;
         }
 
-        public Task<bool> DeleteTaskAsync(int id)
+        public async Task<bool> DeleteTaskAsync(int id)
         {
-            throw new NotImplementedException();
+            var taskItem = await _unitOfWork.TaskItemRepository.GetTaskByIdAsync(id);
+            if(taskItem == null)
+            {
+                return false; // Task not found
+            }
+            await _unitOfWork.TaskItemRepository.DeleteTaskAsync(taskItem);
+            await _unitOfWork.SaveChangesAsync();
+            return true;
         }
 
-        public Task<IEnumerable<TaskItem>> GetAllTasksAsync()
+        public async Task<IEnumerable<TaskItem>> GetAllTasksAsync()
         {
-            throw new NotImplementedException();
+           return await _unitOfWork.TaskItemRepository.GetAllTasksAsync();
+
         }
 
         public Task<TaskItem?> GetTaskByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            return _unitOfWork.TaskItemRepository.GetTaskByIdAsync(id);
         }
 
-        public Task<bool> UpdateTaskAsync(TaskItem taskItem)
+        public async Task<bool> UpdateTaskAsync(TaskItem taskItem)
         {
-            throw new NotImplementedException();
+            var existingTask = await _unitOfWork.TaskItemRepository.GetTaskByIdAsync(taskItem.Id);
+
+            if (existingTask == null)
+            {
+                return false; // Task not found
+            }
+
+
+            existingTask.Title = taskItem.Title;
+            existingTask.Description = taskItem.Description;
+            existingTask.IsCompleted = taskItem.IsCompleted;
+            existingTask.DueDate = taskItem.DueDate;
+            existingTask.UpdatedAt = DateTime.UtcNow;
+
+            await _unitOfWork.TaskItemRepository.UpdateTaskAsync(existingTask);
+            await _unitOfWork.SaveChangesAsync();
+            return true;
         }
     }
 }

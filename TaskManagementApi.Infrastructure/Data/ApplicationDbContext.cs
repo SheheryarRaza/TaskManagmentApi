@@ -33,7 +33,7 @@ namespace TaskManagementApi.Core.Data
 
             // Set default value for IsCompleted.
             modelBuilder.Entity<TaskItem>()
-                .Property(t => t.IsCompletedAt)
+                .Property(t => t.IsCompleted)
                 .HasDefaultValue(false);
 
             // Set default value for CreatedAt.
