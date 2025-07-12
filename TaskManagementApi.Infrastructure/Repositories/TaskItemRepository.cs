@@ -21,22 +21,23 @@ namespace TaskManagementApi.Core.Repositories
 
         public async Task<IEnumerable<TaskItem>> GetAllTasksAsync()
         {
-            return await _context.TaskItems.ToListAsync();
+            return await _context.TaskItems.Include(t => t.User).ToListAsync();
         }
 
         public async Task<TaskItem?> GetTaskByIdAsync(int id)
         {
-            return await _context.TaskItems.FindAsync(id);
+            return await _context.TaskItems.Include(t => t.User).FirstOrDefaultAsync(t => t.Id == id);
         }
 
         public async Task AddTaskAsync(TaskItem taskItem)
         {
-            _context.TaskItems.Add(taskItem);
-        }
+            _context.TaskItems.AddAsync(taskItem);
 
+        }
         public async Task DeleteTaskAsync(TaskItem taskItem)
         {
             _context.TaskItems.Remove(taskItem);
+            await _context.SaveChangesAsync();
         }
 
         public async Task<bool> TaskItemExistsAsync(int id)
