@@ -22,26 +22,16 @@ namespace TaskManagementApi.Core.Data
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<TaskItem>()
-                .Property(t => t.Title)
+                .HasOne(t => t.User) // A TaskItem has one User
+                .WithMany()          // A User can have many TaskItems (no navigation property back to tasks on User)
+                .HasForeignKey(t => t.UserId) // The foreign key property
                 .IsRequired()
-                .HasMaxLength(250);
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // Configure 'Description' to have a max length.
-            modelBuilder.Entity<TaskItem>()
-                .Property(t => t.Description)
-                .HasMaxLength(1000);
-
-            // Set default value for IsCompleted.
-            modelBuilder.Entity<TaskItem>()
-                .Property(t => t.IsCompleted)
-                .HasDefaultValue(false);
-
-            // Set default value for CreatedAt.
             modelBuilder.Entity<TaskItem>()
                 .Property(t => t.CreatedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
 
-            // Set default value for UpdatedAt.
             modelBuilder.Entity<TaskItem>()
                 .Property(t => t.UpdatedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
