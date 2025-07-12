@@ -11,12 +11,15 @@ namespace TaskManagementApi.Core.Services
     public class UnitOfService : IUnitOfService
     {
         private readonly ITaskItemService _taskItemService;
+        private readonly IAuthService _authService;
 
-        public UnitOfService(ITaskItemService taskItemService)
+        public UnitOfService(ITaskItemService taskItemService, IAuthService authService)
         {
             _taskItemService = taskItemService;
+            _authService = authService;
         }
 
         public ITaskItemService TaskItemService => _taskItemService;
+        public IAuthService AuthService => _authService;
     }
 }

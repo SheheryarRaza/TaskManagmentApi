@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using TaskManagementApi.Core.DTOs;
 using TaskManagementApi.Core.Entities;
 using TaskManagementApi.Core.Interface;
 
@@ -6,6 +8,7 @@ namespace TaskManagementApi.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
 
     public class TaskController : ControllerBase
     {
@@ -36,16 +39,32 @@ namespace TaskManagementApi.Presentation.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<TaskItem>> PostTaskItem(TaskItem taskItem)
+        public async Task<ActionResult<TaskItem>> PostTaskItem(DTO_TaskPost taskPost)
         {
-            var createdItem = await _unitOfService.TaskItemService.CreateTaskAsync(taskItem);
-            return CreatedAtAction(nameof(GetTaskItems), new { id = createdItem.Id }, createdItem);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Mapping is now handled in the TaskItemService
+            var createdTask = await _unitOfService.TaskItemService.CreateTaskAsync(taskPost);
+            return CreatedAtAction(nameof(GetTaskItem), new { id = createdTask.Id }, createdTask);
         }
 
         [HttpPut]
-        public async Task<IActionResult> PutTaskItem(TaskItem taskItem)
+        public async Task<IActionResult> PutTaskItem(int id,[FromBody] DTO_TaskPut taskPut)
         {
-            var result = await _unitOfService.TaskItemService.UpdateTaskAsync(taskItem);
+            if (id != taskPut.Id) // Ensure ID in route matches ID in body
+            {
+                return BadRequest();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await _unitOfService.TaskItemService.UpdateTaskAsync(id, taskPut);
 
             if (!result)
             {

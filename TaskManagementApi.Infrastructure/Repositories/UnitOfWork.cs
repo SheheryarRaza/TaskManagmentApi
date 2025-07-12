@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TaskManagementApi.Core.Data;
 using TaskManagementApi.Core.Interface.IRepositories;
+using TaskManagementApi.Infrastructure.Repositories;
 
 namespace TaskManagementApi.Core.Repositories
 {
@@ -25,6 +26,7 @@ namespace TaskManagementApi.Core.Repositories
                 return _taskItemRepository;
             }
         }
+
 
         public int SaveChanges()
         {
