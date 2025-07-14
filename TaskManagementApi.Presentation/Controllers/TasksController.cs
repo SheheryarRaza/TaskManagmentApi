@@ -19,10 +19,10 @@ namespace TaskManagementApi.Presentation.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TaskItem>>> GetTaskItems()
+        public async Task<ActionResult<DTO_PaginatedResult<DTO_TaskGet>>> GetTaskItems([FromQuery] TaskQueryParams queryParams)
         {
-            var tasks = await _unitOfService.TaskItemService.GetAllTasksAsync();
-            return Ok(tasks);
+            var paginatedTasks = await _unitOfService.TaskItemService.GetAllTaskAsync(queryParams);
+            return Ok(paginatedTasks);
         }
 
         [HttpGet("{id}")]

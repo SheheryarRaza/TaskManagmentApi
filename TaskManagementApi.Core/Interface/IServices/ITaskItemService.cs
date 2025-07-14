@@ -10,7 +10,7 @@ namespace TaskManagementApi.Core.Interface
 {
     public interface ITaskItemService
     {
-        Task<IEnumerable<DTO_TaskGet>> GetAllTasksAsync();
+        Task<DTO_PaginatedResult<DTO_TaskGet>> GetAllTaskAsync(TaskQueryParams queryParams);
         Task<DTO_TaskGet?> GetTaskByIdAsync(int id);
         Task<DTO_TaskGet> CreateTaskAsync(DTO_TaskPost taskPost);
         Task<bool> UpdateTaskAsync(int id , DTO_TaskPut taskPut);
