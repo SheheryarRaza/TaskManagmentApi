@@ -9,7 +9,9 @@ namespace TaskManagementApi.Core.Interface.IRepositories
 {
     public interface ITaskItemRepository
     {
-        Task<IEnumerable<TaskItem>> GetAllTasksAsync();
+        Task<IQueryable<TaskItem>> GetAllTasksQueryable();
+        public Task<IEnumerable<TaskItem>> GetAllTasksAsync();
+
         Task<TaskItem?> GetTaskByIdAsync(int id);
         Task AddTaskAsync(TaskItem taskItem);
         Task<bool> UpdateTaskAsync(TaskItem taskItem);

@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using TaskManagementApi.Core.Entities;
-using TaskManagementApi.Core.Interface.IRepositories;
-using TaskManagementApi.Core.Interface;
-using Microsoft.AspNetCore.Http;
-using System.Security.Claims;
-using TaskManagementApi.Core.DTOs;
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using TaskManagementApi.Core.DTOs;
+using TaskManagementApi.Core.Entities;
+using TaskManagementApi.Core.Interface;
+using TaskManagementApi.Core.Interface.IRepositories;
 
 namespace TaskManagementApi.Core.Services
 {
@@ -33,6 +35,87 @@ namespace TaskManagementApi.Core.Services
                 throw new UnauthorizedAccessException("User is not authenticated or user ID not found.");
             }
             return userId;
+        }
+        public async Task<DTO_PaginatedResult<DTO_TaskGet>> GetAllTaskAsync(TaskQueryParams queryParams)
+        {
+            var currentUserId = GetCurrentUserId();
+            IQueryable<TaskItem> query = (await _unitOfWork.TaskItemRepository.GetAllTasksQueryable())
+                                        .Where(t => t.UserId == currentUserId);
+
+            //Fitering
+            if (!string.IsNullOrWhiteSpace(queryParams.Search))
+            {
+                string searchLower = queryParams.Search.ToLower();
+                query = query.Where(t => t.Title.ToLower().Contains(searchLower) || (t.Description != null && t.Description.ToLower().Contains(searchLower)));
+            }
+
+            if (queryParams.IsCompleted.HasValue)
+            {
+                query = query.Where(t => t.IsCompleted == queryParams.IsCompleted.Value);
+            }
+            if (queryParams.DueDateFrom.HasValue)
+            {
+                query = query.Where(t => t.DueDate >= queryParams.DueDateFrom.Value);
+            }
+            if (queryParams.DueDateTo.HasValue)
+            {
+                // Add one day to include tasks due on the exact DueDateTo
+                query = query.Where(t => t.DueDate <= queryParams.DueDateTo.Value.AddDays(1));
+            }
+
+            int totalCount = await query.CountAsync();
+
+            // 2. Sorting
+            if (!string.IsNullOrWhiteSpace(queryParams.SortBy))
+            {
+                var parameter = Expression.Parameter(typeof(TaskItem), "t");
+                var property = Expression.Property(parameter, queryParams.SortBy);
+                var lambda = Expression.Lambda(property, parameter);
+
+                if (queryParams.SortOrder?.ToLower() == "desc")
+                {
+                    query = Queryable.OrderByDescending(query, (dynamic)lambda);
+                }
+                else
+                {
+                    query = Queryable.OrderBy(query, (dynamic)lambda);
+                }
+            }
+            else
+            {
+                // Default sorting if no SortBy is provided
+                query = query.OrderByDescending(t => t.CreatedAt);
+            }
+
+            // 3. Pagination
+            var pagedTasks = await query
+                .Skip((queryParams.PageNumber - 1) * queryParams.AdjustedPageSize)
+                .Take(queryParams.AdjustedPageSize)
+                .ToListAsync();
+
+            // Map TaskItem entities to TaskGetDto
+            var mappedTasks = _mapper.Map<IEnumerable<DTO_TaskGet>>(pagedTasks);
+
+            return new DTO_PaginatedResult<DTO_TaskGet>
+            {
+                Items = mappedTasks,
+                TotalCount = totalCount,
+                PageNumber = queryParams.PageNumber,
+                PageSize = queryParams.AdjustedPageSize
+            };
+        }
+
+        public async Task<DTO_TaskGet?> GetTaskByIdAsync(int id)
+        {
+            var currentUserId = GetCurrentUserId();
+            var taskItem = await _unitOfWork.TaskItemRepository.GetTaskByIdAsync(id);
+
+            if (taskItem == null || taskItem.UserId != currentUserId)
+            {
+                return null;
+            }
+
+            return _mapper.Map<DTO_TaskGet>(taskItem);
         }
         public async Task<DTO_TaskGet> CreateTaskAsync(DTO_TaskPost taskPost)
         {
@@ -60,29 +143,6 @@ namespace TaskManagementApi.Core.Services
             return true;
         }
 
-        public async Task<IEnumerable<DTO_TaskGet>> GetAllTasksAsync()
-        {
-            var currentUserId = GetCurrentUserId();
-            var tasks = (await _unitOfWork.TaskItemRepository.GetAllTasksAsync())
-                        .Where(t => t.UserId == currentUserId);
-
-            return _mapper.Map<IEnumerable<DTO_TaskGet>>(tasks);
-
-        }
-
-        public async Task<DTO_TaskGet?> GetTaskByIdAsync(int id)
-        {
-            var currentUserId = GetCurrentUserId();
-            var taskItem = await _unitOfWork.TaskItemRepository.GetTaskByIdAsync(id);
-
-            if (taskItem == null || taskItem.UserId != currentUserId)
-            {
-                return null;
-            }
-
-            return _mapper.Map<DTO_TaskGet>(taskItem);
-        }
-
         public async Task<bool> UpdateTaskAsync(int id , DTO_TaskPut taskPut)
         {
             var currentUserId = GetCurrentUserId();
@@ -103,5 +163,6 @@ namespace TaskManagementApi.Core.Services
             await _unitOfWork.SaveChangesAsync();
             return true;
         }
+
     }
 }
