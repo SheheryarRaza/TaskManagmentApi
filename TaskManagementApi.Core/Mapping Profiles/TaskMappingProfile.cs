@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
-using TaskManagementApi.Core.DTOs;
+using TaskManagementApi.Core.DTOs.DTO_Tasks;
 using TaskManagementApi.Core.Entities;
 
 namespace TaskManagementApi.Core.Mapping_Profiles

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
-namespace TaskManagementApi.Core.DTOs
+namespace TaskManagementApi.Core.DTOs.DTO_Tasks
 {
     public class TaskQueryParams
     {

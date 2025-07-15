@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TaskManagementApi.Core.Entities;
 
 namespace TaskManagementApi.Core.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext<User>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
@@ -36,6 +37,8 @@ namespace TaskManagementApi.Core.Data
                 .Property(t => t.UpdatedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
 
+            modelBuilder.Entity<TaskItem>().HasQueryFilter(t => !t.IsDeleted);
+
         }
 
         public override int SaveChanges()
@@ -60,11 +63,28 @@ namespace TaskManagementApi.Core.Data
                     {
                         taskItem.CreatedAt = DateTime.UtcNow;
                         taskItem.UpdatedAt = DateTime.UtcNow;
+                        taskItem.IsDeleted = false;
+                        taskItem.DeletedAt = null;
                     }
                     else if (entry.State == EntityState.Modified)
                     {
                         taskItem.UpdatedAt = DateTime.UtcNow;
+
+                        if (entry.Property(nameof(TaskItem.IsDeleted)).IsModified && taskItem.IsDeleted)
+                        {
+                            taskItem.DeletedAt = DateTime.UtcNow;
+                        }
+                        else if (entry.Property(nameof(TaskItem.IsDeleted)).IsModified && !taskItem.IsDeleted)
+                        {
+                            taskItem.DeletedAt = null;
+                        }
                         entry.Property("CreatedAt").IsModified = false;
+                    }
+                    else if (entry.State == EntityState.Deleted)
+                    {
+                        entry.State = EntityState.Modified;
+                        taskItem.IsDeleted = true;
+                        taskItem.DeletedAt = DateTime.UtcNow;
                     }
                 }
             }

@@ -20,6 +20,8 @@ namespace TaskManagementApi.Core.Entities
         public DateTime? DueDate { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
 
         [Required]
         public string UserId { get; set; } = string.Empty;

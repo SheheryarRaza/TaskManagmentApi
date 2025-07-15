@@ -1,16 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.IdentityModel.Tokens;
+using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using TaskManagementApi.Core.DTOs.DTO_User;
 using TaskManagementApi.Core.Entities;
 using TaskManagementApi.Core.Interface;
 using TaskManagementApi.Core.Interface.IRepositories;
-using Microsoft.AspNetCore.Http;
-using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace TaskManagementApi.Core.Services
 {
@@ -19,12 +23,35 @@ namespace TaskManagementApi.Core.Services
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public AuthService(IUserRepository userRepository, IConfiguration configuration, IHttpContextAccessor httpContextAccessor )
+        private readonly IMapper _mapper;
+        private readonly UserManager<User> _userManager;
+        public AuthService(IUserRepository userRepository, IConfiguration configuration, IHttpContextAccessor httpContextAccessor, IMapper mapper, UserManager<User> userManager)
         {
             _userRepository = userRepository;
             _configuration = configuration;
             _httpContextAccessor = httpContextAccessor;
+            _mapper = mapper;
+            _userManager = userManager;
         }
+
+        public async Task<(bool Success, string? Message)> ChangePasswordAsync(DTO_ChangePassowrd changePassword)
+        {
+            var currentUser = await GetCurerntUserAsync();
+            if (currentUser == null)
+            {
+                return (false, "User not found.");
+            }
+
+            var result = await _userManager.ChangePasswordAsync(currentUser, changePassword.CurrentPassword, changePassword.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                return (false, string.Join("; ", result.Errors.Select(e => e.Description)));
+            }
+
+            return (true, "Password changed successfully.");
+        }
+
         public Task<User?> GetCurerntUserAsync()
         {
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -33,6 +60,16 @@ namespace TaskManagementApi.Core.Services
                 return Task.FromResult<User?>(null);
             }
             return _userRepository.GetUserByIdAsync(userId);
+        }
+
+        public async Task<DTO_UserGet?> GetUserProfileAsync()
+        {
+            var currentUser = await GetCurerntUserAsync();
+            if(currentUser == null)
+            {
+                return null;
+            }
+            return _mapper.Map<DTO_UserGet>(currentUser);
         }
 
         public async Task<(bool Success, string? Token, string? Message)> LoginAsync(string email, string password)
@@ -85,6 +122,36 @@ namespace TaskManagementApi.Core.Services
             }
 
             return (true, "User Registered Successfully.");
+        }
+
+        public async Task<(bool Success, string? Message)> UpdateUserProfileAsync(DTO_UpdateUser updateUser)
+        {
+            var currentUser = await GetCurerntUserAsync();
+
+            if (currentUser == null)
+            {
+                return (false, "User not found.");
+            }
+
+            if(!string.Equals(currentUser.Email, updateUser.Email, StringComparison.OrdinalIgnoreCase))
+            {
+                var existingUser = await _userRepository.GetUserByEmailAsync(updateUser.Email);
+                if (existingUser != null && existingUser.Id != currentUser.Id)
+                {
+                    return (false, "Email is already taken by another user.");
+                }
+            }
+            _mapper.Map(updateUser, currentUser);
+
+            var result = await _userRepository.UpdateUserAsync(currentUser);
+
+            if (!result.Succeeded)
+            {
+                return (false, string.Join("; ", result.Errors.Select(e => e.Description)));
+            }
+
+            return (true, "Profile updated successfully.");
+
         }
     }
 }
