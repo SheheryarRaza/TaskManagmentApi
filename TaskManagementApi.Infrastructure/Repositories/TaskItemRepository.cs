@@ -31,7 +31,7 @@ namespace TaskManagementApi.Core.Repositories
 
         public async Task<TaskItem?> GetTaskByIdAsync(int id)
         {
-            return await _context.TaskItems.FindAsync(id);
+            return await _context.TaskItems.Include(t => t.User).IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == id);
         }
 
         public async Task AddTaskAsync(TaskItem taskItem)

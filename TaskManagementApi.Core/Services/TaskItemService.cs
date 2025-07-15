@@ -168,7 +168,7 @@ namespace TaskManagementApi.Core.Services
             var currentUser = GetCurrentUserId();
 
             var taskItem = await _unitOfWork.TaskItemRepository.GetTaskByIdAsync(id);
-            if (taskItem == null || taskItem.UserId != currentUser || taskItem.IsDeleted)
+            if (taskItem == null || taskItem.UserId != currentUser)
             {
                 return false;
             }
