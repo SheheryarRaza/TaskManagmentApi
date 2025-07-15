@@ -77,7 +77,9 @@ namespace TaskManagementApi.Infrastructure
                                     DueDate = DateTime.UtcNow.AddDays(2),
                                     UserId = user1.Id,
                                     CreatedAt = DateTime.UtcNow,
-                                    UpdatedAt = DateTime.UtcNow
+                                    UpdatedAt = DateTime.UtcNow,
+                                    IsNotificationEnabled = true, // NEW: Enable notification for this task
+                                    NotificationDateTime = DateTime.UtcNow.AddMinutes(1) // NEW: Notify in 1 minute
                                 },
                                 new TaskItem
                                 {
@@ -87,7 +89,9 @@ namespace TaskManagementApi.Infrastructure
                                     DueDate = DateTime.UtcNow.AddDays(5),
                                     UserId = user1.Id,
                                     CreatedAt = DateTime.UtcNow,
-                                    UpdatedAt = DateTime.UtcNow
+                                    UpdatedAt = DateTime.UtcNow,
+                                    IsNotificationEnabled = true, // NEW: Enable notification for this task
+                                    NotificationDateTime = DateTime.UtcNow.AddMinutes(2) // NEW: Notify in 2 minutes
                                 },
                                 new TaskItem
                                 {
@@ -107,7 +111,9 @@ namespace TaskManagementApi.Infrastructure
                                     DueDate = DateTime.UtcNow.AddDays(30),
                                     UserId = user2.Id,
                                     CreatedAt = DateTime.UtcNow,
-                                    UpdatedAt = DateTime.UtcNow
+                                    UpdatedAt = DateTime.UtcNow,
+                                    IsNotificationEnabled = true, // NEW: Enable notification for this task
+                                    NotificationDateTime = DateTime.UtcNow.AddMinutes(3) // NEW: Notify in 3 minutes
                                 },
                                 new TaskItem
                                 {
