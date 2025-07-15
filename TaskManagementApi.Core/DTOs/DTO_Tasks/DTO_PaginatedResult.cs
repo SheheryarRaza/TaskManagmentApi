@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TaskManagementApi.Core.DTOs
+namespace TaskManagementApi.Core.DTOs.DTO_Tasks
 {
     public class DTO_PaginatedResult<T>
     {

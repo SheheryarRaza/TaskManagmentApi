@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TaskManagementApi.Core.DTOs;
+using TaskManagementApi.Core.DTOs.DTO_Tasks;
 using TaskManagementApi.Core.Entities;
 using TaskManagementApi.Core.Interface;
 
@@ -85,6 +85,18 @@ namespace TaskManagementApi.Presentation.Controllers
             return NoContent();
         }
 
+        [HttpPost("{id}/restore")]
+        public async Task<IActionResult> RestoreTaskItem(int id)
+        {
+            var result = await _unitOfService.TaskItemService.RestoreTaskAsync(id);
+
+            if (!result)
+            {
+                return NotFound("Task not found or not soft-deleted, or you don't have permission.");
+            }
+
+            return Ok(new { message = $"Task with ID {id} restored successfully." });
+        }
     }
 
 }

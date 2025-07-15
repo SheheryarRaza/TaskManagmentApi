@@ -52,5 +52,10 @@ namespace TaskManagementApi.Infrastructure.Repositories
         {
             return await _userManager.FindByIdAsync(id);
         }
+
+        public async Task<IdentityResult> UpdateUserAsync(User user)
+        {
+            return await _userManager.UpdateAsync(user);
+        }
     }
 }

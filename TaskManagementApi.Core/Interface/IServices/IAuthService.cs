@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TaskManagementApi.Core.DTOs.DTO_User;
 using TaskManagementApi.Core.Entities;
 
 namespace TaskManagementApi.Core.Interface
@@ -13,5 +14,10 @@ namespace TaskManagementApi.Core.Interface
         Task<(bool Success, string? Message)> RegisterAsync (string email, string password);
 
         Task<User?> GetCurerntUserAsync();
+
+        Task<DTO_UserGet?> GetUserProfileAsync();
+        Task<(bool Success, string? Message)> UpdateUserProfileAsync(DTO_UpdateUser updateUser);
+
+        Task<(bool Success, string? Message)> ChangePasswordAsync(DTO_ChangePassowrd changePassword);
     }
 }

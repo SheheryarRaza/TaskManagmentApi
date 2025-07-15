@@ -17,5 +17,7 @@ namespace TaskManagementApi.Core.Interface.IRepositories
         Task<bool> UpdateTaskAsync(TaskItem taskItem);
         Task DeleteTaskAsync(TaskItem taskItem);
         Task<bool> TaskItemExistsAsync(int id);
+
+        Task RestoreTaskAsync(TaskItem taskItem);
     }
 }

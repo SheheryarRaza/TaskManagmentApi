@@ -41,7 +41,16 @@ namespace TaskManagementApi.Core.Repositories
         }
         public async Task DeleteTaskAsync(TaskItem taskItem)
         {
-            _context.TaskItems.Remove(taskItem);
+            taskItem.IsDeleted = true;
+            taskItem.DeletedAt = DateTime.UtcNow;
+            _context.TaskItems.Update(taskItem);
+        }
+
+        public async Task RestoreTaskAsync(TaskItem taskItem)
+        {
+            taskItem.IsDeleted = false;
+            taskItem.DeletedAt = null;
+            _context.TaskItems.Update(taskItem);
             await _context.SaveChangesAsync();
         }
 

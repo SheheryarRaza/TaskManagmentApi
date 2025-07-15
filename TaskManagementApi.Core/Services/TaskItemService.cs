@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using TaskManagementApi.Core.DTOs;
+using TaskManagementApi.Core.DTOs.DTO_Tasks;
 using TaskManagementApi.Core.Entities;
 using TaskManagementApi.Core.Interface;
 using TaskManagementApi.Core.Interface.IRepositories;
@@ -130,20 +130,7 @@ namespace TaskManagementApi.Core.Services
             return _mapper.Map<DTO_TaskGet>(taskItem);
         }
 
-        public async Task<bool> DeleteTaskAsync(int id)
-        {
-            var currentUserId = GetCurrentUserId();
-            var taskItem = await _unitOfWork.TaskItemRepository.GetTaskByIdAsync(id);
-            if (taskItem == null || taskItem.UserId != currentUserId)
-            {
-                return false;
-            }
-            await _unitOfWork.TaskItemRepository.DeleteTaskAsync(taskItem);
-            await _unitOfWork.SaveChangesAsync();
-            return true;
-        }
-
-        public async Task<bool> UpdateTaskAsync(int id , DTO_TaskPut taskPut)
+        public async Task<bool> UpdateTaskAsync(int id, DTO_TaskPut taskPut)
         {
             var currentUserId = GetCurrentUserId();
             var existingTask = await _unitOfWork.TaskItemRepository.GetTaskByIdAsync(id);
@@ -163,6 +150,32 @@ namespace TaskManagementApi.Core.Services
             await _unitOfWork.SaveChangesAsync();
             return true;
         }
+        public async Task<bool> DeleteTaskAsync(int id)
+        {
+            var currentUserId = GetCurrentUserId();
+            var taskItem = await _unitOfWork.TaskItemRepository.GetTaskByIdAsync(id);
+            if (taskItem == null || taskItem.UserId != currentUserId)
+            {
+                return false;
+            }
+            await _unitOfWork.TaskItemRepository.DeleteTaskAsync(taskItem);
+            await _unitOfWork.SaveChangesAsync();
+            return true;
+        }
 
+        public async Task<bool> RestoreTaskAsync(int id)
+        {
+            var currentUser = GetCurrentUserId();
+
+            var taskItem = await _unitOfWork.TaskItemRepository.GetTaskByIdAsync(id);
+            if (taskItem == null || taskItem.UserId != currentUser || taskItem.IsDeleted)
+            {
+                return false;
+            }
+
+            await _unitOfWork.TaskItemRepository.RestoreTaskAsync(taskItem);
+            await _unitOfWork.SaveChangesAsync();
+            return true;
+        }
     }
 }
