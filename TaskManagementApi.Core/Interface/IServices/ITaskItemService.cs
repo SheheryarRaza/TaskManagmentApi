@@ -12,9 +12,11 @@ namespace TaskManagementApi.Core.Interface
     {
         Task<DTO_PaginatedResult<DTO_TaskGet>> GetAllTaskAsync(TaskQueryParams queryParams);
         Task<DTO_TaskGet?> GetTaskByIdAsync(int id);
-        Task<DTO_TaskGet> CreateTaskAsync(DTO_TaskPost taskPost);
-        Task<bool> UpdateTaskAsync(int id , DTO_TaskPut taskPut);
+        Task<DTO_TaskGet> CreateTaskAsync(DTO_TaskPost taskPost, bool isAdmin, string currentUserId);
+        Task<bool> UpdateTaskAsync(int id , DTO_TaskPut taskPut, bool isAdmin, string currentUserId);
         Task<bool> DeleteTaskAsync(int id);
         Task<bool> RestoreTaskAsync(int id);
+        Task<bool> MarkTaskAsNotifiedAsync(int id);
+        Task<IEnumerable<TaskItem>> GetTasksForNotificationAsync(TimeSpan notificationLeadTime);
     }
 }

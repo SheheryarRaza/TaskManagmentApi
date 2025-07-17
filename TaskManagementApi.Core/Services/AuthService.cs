@@ -36,7 +36,7 @@ namespace TaskManagementApi.Core.Services
 
         public async Task<(bool Success, string? Message)> ChangePasswordAsync(DTO_ChangePassowrd changePassword)
         {
-            var currentUser = await GetCurerntUserAsync();
+            var currentUser = await GetCurrentUserAsync();
             if (currentUser == null)
             {
                 return (false, "User not found.");
@@ -52,7 +52,7 @@ namespace TaskManagementApi.Core.Services
             return (true, "Password changed successfully.");
         }
 
-        public Task<User?> GetCurerntUserAsync()
+        public Task<User?> GetCurrentUserAsync()
         {
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if(string.IsNullOrEmpty(userId))
@@ -64,7 +64,7 @@ namespace TaskManagementApi.Core.Services
 
         public async Task<DTO_UserGet?> GetUserProfileAsync()
         {
-            var currentUser = await GetCurerntUserAsync();
+            var currentUser = await GetCurrentUserAsync();
             if(currentUser == null)
             {
                 return null;
@@ -126,7 +126,7 @@ namespace TaskManagementApi.Core.Services
 
         public async Task<(bool Success, string? Message)> UpdateUserProfileAsync(DTO_UpdateUser updateUser)
         {
-            var currentUser = await GetCurerntUserAsync();
+            var currentUser = await GetCurrentUserAsync();
 
             if (currentUser == null)
             {
@@ -152,6 +152,16 @@ namespace TaskManagementApi.Core.Services
 
             return (true, "Profile updated successfully.");
 
+        }
+
+        public async Task<IList<string>> GetCurrentUserRolesAsync()
+        {
+            var currentUser = await GetCurrentUserAsync();
+            if (currentUser == null)
+            {
+                return new List<string>();
+            }
+            return await _userRepository.GetUserRolesAsync(currentUser);
         }
     }
 }

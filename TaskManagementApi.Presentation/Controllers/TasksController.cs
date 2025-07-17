@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskManagementApi.Core.DTOs.DTO_Tasks;
 using TaskManagementApi.Core.Entities;
@@ -16,6 +17,22 @@ namespace TaskManagementApi.Presentation.Controllers
         public TaskController(IUnitOfService unitOfService)
         {
             _unitOfService = unitOfService;
+        }
+
+        private string GetCurrentUserId()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new UnauthorizedAccessException("User ID not found in claims.");
+            }
+            return userId;
+        }
+
+        private async Task<bool> IsCurrentUserAdminAsync()
+        {
+            var roles = await _unitOfService.AuthService.GetCurrentUserRolesAsync();
+            return roles.Contains("Admin");
         }
 
         [HttpGet]
@@ -46,9 +63,19 @@ namespace TaskManagementApi.Presentation.Controllers
                 return BadRequest(ModelState);
             }
 
-            // Mapping is now handled in the TaskItemService
-            var createdTask = await _unitOfService.TaskItemService.CreateTaskAsync(taskPost);
-            return CreatedAtAction(nameof(GetTaskItem), new { id = createdTask.Id }, createdTask);
+            var currentUserId = GetCurrentUserId();
+            var isAdmin = await IsCurrentUserAdminAsync();
+
+            try
+            {
+                var createdTask = await _unitOfService.TaskItemService.CreateTaskAsync(taskPost, isAdmin, currentUserId);
+                // Return TaskGetDto after creation if desired, or the entity itself
+                return CreatedAtAction(nameof(GetTaskItem), new { id = createdTask.Id }, createdTask);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPut]
@@ -64,11 +91,14 @@ namespace TaskManagementApi.Presentation.Controllers
                 return BadRequest(ModelState);
             }
 
-            var result = await _unitOfService.TaskItemService.UpdateTaskAsync(id, taskPut);
+            var currentUserId = GetCurrentUserId();
+            var isAdmin = await IsCurrentUserAdminAsync();
+
+            var result = await _unitOfService.TaskItemService.UpdateTaskAsync(id, taskPut, isAdmin, currentUserId);
 
             if (!result)
             {
-                return NotFound();
+                return NotFound("Task not found or you do not have permission to update it.");
             }
 
             return NoContent();

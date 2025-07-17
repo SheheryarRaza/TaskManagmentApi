@@ -57,5 +57,10 @@ namespace TaskManagementApi.Infrastructure.Repositories
         {
             return await _userManager.UpdateAsync(user);
         }
+
+        public async Task<IList<string>> GetUserRolesAsync(User user)
+        {
+            return await _userManager.GetRolesAsync(user);
+        }
     }
 }

@@ -1,5 +1,6 @@
 using TaskManagementApi.Core;
 using TaskManagementApi.Infrastructure;
+using TaskManagementApi.Infrastructure.Background_Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,8 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 }); // Configures Swagger generation
+
+builder.Services.AddHostedService<TaskNotificationBackgroundService>();
 
 var app = builder.Build();
 

@@ -7,32 +7,33 @@ using System.Threading.Tasks;
 
 namespace TaskManagementApi.Core.Entities
 {
-    public class TaskItem
+    public class SubTaskItem
     {
         public int Id { get; set; }
+
         [Required]
         [StringLength(250)]
         public string Title { get; set; } = string.Empty;
+
         [StringLength(1000)]
         public string? Description { get; set; }
-        public bool IsCompleted { get; set; } = false;
 
+        public bool IsCompleted { get; set; } = false;
         public DateTime? DueDate { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }
 
-        public bool IsNotificationEnabled { get; set; } = false;
-        public DateTime? NotificationDateTime { get; set; }
-        public bool IsNotified { get; set; } = false;
+        // Foreign Key to Parent Task
+        [Required]
+        public int ParentTaskId { get; set; }
+        public TaskItem ParentTask { get; set; } = default!; // Navigation property to parent task
 
+        // Foreign Key to User (who created/owns this subtask)
         [Required]
         public string UserId { get; set; } = string.Empty;
-        public User? User { get; set; }
-
-        public string? AssignedByUserId { get; set; }
-        public User? AssignedByUser { get; set; }
-        public ICollection<SubTaskItem> SubTasks { get; set; } = new List<SubTaskItem>();
+        public User User { get; set; } = default!;
     }
 }

@@ -28,7 +28,7 @@ namespace TaskManagementApi.Infrastructure
                     // Ensure the database is created and migrations are applied
                     await context.Database.MigrateAsync();
 
-                    // Seed Roles (NEW)
+                    // Seed Roles
                     if (!await roleManager.RoleExistsAsync("Admin"))
                     {
                         await roleManager.CreateAsync(new IdentityRole("Admin"));
@@ -41,96 +41,145 @@ namespace TaskManagementApi.Infrastructure
                     }
 
                     // Seed Users
-                    if (!userManager.Users.Any())
+                    User? user1 = await userManager.FindByEmailAsync("user1@example.com");
+                    User? user2 = await userManager.FindByEmailAsync("user2@example.com");
+
+                    if (user1 == null)
                     {
-                        logger.LogInformation("Seeding default users...");
-
-                        var user1 = new User { UserName = "user1@example.com", Email = "user1@example.com", EmailConfirmed = true };
-                        var user2 = new User { UserName = "user2@example.com", Email = "user2@example.com", EmailConfirmed = true };
-
+                        user1 = new User { UserName = "user1@example.com", Email = "user1@example.com", EmailConfirmed = true };
                         await userManager.CreateAsync(user1, "Password123!");
-                        await userManager.CreateAsync(user2, "Password123!");
-
-                        // Assign roles to users (NEW)
                         await userManager.AddToRoleAsync(user1, "Admin");
+                        logger.LogInformation("Admin user1@example.com seeded.");
+                    }
+                    if (user2 == null)
+                    {
+                        user2 = new User { UserName = "user2@example.com", Email = "user2@example.com", EmailConfirmed = true };
+                        await userManager.CreateAsync(user2, "Password123!");
                         await userManager.AddToRoleAsync(user2, "User");
-
-                        logger.LogInformation("Default users and roles seeded.");
+                        logger.LogInformation("Regular user2@example.com seeded.");
                     }
 
-                    // Seed Tasks
-                    if (!context.TaskItems.Any())
+                    // Seed Tasks and Subtasks
+                    if (!context.TaskItems.Any() || !context.SubTaskItems.Any())
                     {
-                        logger.LogInformation("Seeding default tasks...");
+                        logger.LogInformation("Seeding default tasks and subtasks...");
 
-                        var user1 = await userManager.FindByEmailAsync("user1@example.com");
-                        var user2 = await userManager.FindByEmailAsync("user2@example.com");
+                        // Ensure users are loaded if they were just created
+                        user1 = await userManager.FindByEmailAsync("user1@example.com");
+                        user2 = await userManager.FindByEmailAsync("user2@example.com");
 
                         if (user1 != null && user2 != null)
                         {
-                            context.TaskItems.AddRange(
-                                new TaskItem
-                                {
-                                    Title = "Buy groceries",
-                                    Description = "Milk, Eggs, Bread, Cheese",
-                                    IsCompleted = false,
-                                    DueDate = DateTime.UtcNow.AddDays(2),
-                                    UserId = user1.Id,
-                                    CreatedAt = DateTime.UtcNow,
-                                    UpdatedAt = DateTime.UtcNow
-                                },
-                                new TaskItem
-                                {
-                                    Title = "Finish report",
-                                    Description = "Complete the quarterly sales report for Q2",
-                                    IsCompleted = false,
-                                    DueDate = DateTime.UtcNow.AddDays(5),
-                                    UserId = user1.Id,
-                                    CreatedAt = DateTime.UtcNow,
-                                    UpdatedAt = DateTime.UtcNow
-                                },
-                                new TaskItem
-                                {
-                                    Title = "Call plumber",
-                                    Description = "Leaky faucet in the bathroom",
-                                    IsCompleted = true,
-                                    DueDate = DateTime.UtcNow.AddDays(-1),
-                                    UserId = user1.Id,
-                                    CreatedAt = DateTime.UtcNow.AddDays(-3),
-                                    UpdatedAt = DateTime.UtcNow.AddDays(-1)
-                                },
-                                new TaskItem
-                                {
-                                    Title = "Plan vacation",
-                                    Description = "Research destinations and book flights",
-                                    IsCompleted = false,
-                                    DueDate = DateTime.UtcNow.AddDays(30),
-                                    UserId = user2.Id,
-                                    CreatedAt = DateTime.UtcNow,
-                                    UpdatedAt = DateTime.UtcNow
-                                },
-                                new TaskItem
-                                {
-                                    Title = "Workout",
-                                    Description = "Go to the gym for an hour",
-                                    IsCompleted = false,
-                                    DueDate = DateTime.UtcNow.AddDays(1),
-                                    UserId = user2.Id,
-                                    CreatedAt = DateTime.UtcNow,
-                                    UpdatedAt = DateTime.UtcNow
-                                }
-                            );
+                            var task1 = new TaskItem
+                            {
+                                Title = "Admin Assigned Task 1 (for user2)",
+                                Description = "This task was assigned by the admin to user2.",
+                                IsCompleted = false,
+                                DueDate = null, // Admin sets to null
+                                UserId = user2.Id, // Assigned to user2
+                                AssignedByUserId = user1.Id, // Assigned by admin1
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow,
+                                IsNotificationEnabled = false, // Admin sets to false
+                                NotificationDateTime = null // Admin sets to null
+                            };
+
+                            var task2 = new TaskItem
+                            {
+                                Title = "Admin Assigned Task 2 (for user2)",
+                                Description = "Another task assigned by the admin to user2.",
+                                IsCompleted = false,
+                                DueDate = null,
+                                UserId = user2.Id,
+                                AssignedByUserId = user1.Id, // Assigned by admin1
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow,
+                                IsNotificationEnabled = false,
+                                NotificationDateTime = null
+                            };
+
+                            var task3 = new TaskItem
+                            {
+                                Title = "User2's Self-Created Task",
+                                Description = "This task was created directly by user2.",
+                                IsCompleted = false,
+                                DueDate = DateTime.UtcNow.AddDays(7),
+                                UserId = user2.Id,
+                                AssignedByUserId = null, // Not assigned by an admin
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow,
+                                IsNotificationEnabled = true,
+                                NotificationDateTime = DateTime.UtcNow.AddMinutes(5)
+                            };
+
+                            var task4 = new TaskItem
+                            {
+                                Title = "Admin's Own Task",
+                                Description = "Task created by the admin for themselves.",
+                                IsCompleted = false,
+                                DueDate = DateTime.UtcNow.AddDays(10),
+                                UserId = user1.Id, // Owned by admin
+                                AssignedByUserId = user1.Id, // Created by admin for themselves
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow,
+                                IsNotificationEnabled = true,
+                                NotificationDateTime = DateTime.UtcNow.AddMinutes(1)
+                            };
+
+                            context.TaskItems.AddRange(task1, task2, task3, task4);
+                            await context.SaveChangesAsync(); // Save tasks to get their IDs
+
+                            // Seed Subtasks for task1 (owned by user2)
+                            var subTask1_1 = new SubTaskItem
+                            {
+                                Title = "Subtask 1.1 for Task 1",
+                                Description = "First subtask for Admin Assigned Task 1.",
+                                IsCompleted = false,
+                                DueDate = DateTime.UtcNow.AddDays(1),
+                                ParentTaskId = task1.Id,
+                                UserId = user2.Id, // Owned by user2
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow
+                            };
+
+                            var subTask1_2 = new SubTaskItem
+                            {
+                                Title = "Subtask 1.2 for Task 1",
+                                Description = "Second subtask for Admin Assigned Task 1.",
+                                IsCompleted = false,
+                                DueDate = DateTime.UtcNow.AddDays(3),
+                                ParentTaskId = task1.Id,
+                                UserId = user2.Id, // Owned by user2
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow
+                            };
+
+                            // Seed Subtask for task3 (owned by user2)
+                            var subTask3_1 = new SubTaskItem
+                            {
+                                Title = "Subtask 3.1 for User2's Task",
+                                Description = "Subtask for user2's self-created task.",
+                                IsCompleted = false,
+                                DueDate = DateTime.UtcNow.AddDays(8),
+                                ParentTaskId = task3.Id,
+                                UserId = user2.Id, // Owned by user2
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow
+                            };
+
+                            context.SubTaskItems.AddRange(subTask1_1, subTask1_2, subTask3_1);
                             await context.SaveChangesAsync();
-                            logger.LogInformation("Default tasks seeded.");
+
+                            logger.LogInformation("Default tasks and subtasks seeded.");
                         }
                         else
                         {
-                            logger.LogWarning("Users not found, skipping task seeding.");
+                            logger.LogWarning("Users not found, skipping task and subtask seeding.");
                         }
                     }
                     else
                     {
-                        logger.LogInformation("Database already contains tasks. Skipping task seeding.");
+                        logger.LogInformation("Database already contains tasks and subtasks. Skipping seeding.");
                     }
                 }
                 catch (Exception ex)
@@ -141,3 +190,4 @@ namespace TaskManagementApi.Infrastructure
         }
     }
 }
+

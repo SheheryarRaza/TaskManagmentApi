@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TaskManagementApi.Core.DTOs.DTO_Tasks
+namespace TaskManagementApi.Core.DTOs.DTO_Subtask
 {
-    public class DTO_TaskPut
+    public class DTO_SubtaskPut
     {
         public int Id { get; set; }
 
@@ -17,11 +17,9 @@ namespace TaskManagementApi.Core.DTOs.DTO_Tasks
 
         [StringLength(1000)]
         public string? Description { get; set; }
-        public bool IsCompleted { get; set; }
-        public DateTime? DueDate { get; set; }
-        public bool IsNotificationEnabled { get; set; }
-        public DateTime? NotificationDateTime { get; set; }
 
-        public string? AssignedToUserId { get; set; }
+        public bool IsCompleted { get; set; }
+
+        public DateTime? DueDate { get; set; }
     }
 }

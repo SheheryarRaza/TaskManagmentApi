@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using TaskManagementApi.Core.Interface;
+using TaskManagementApi.Core.Interface.IServices;
 using TaskManagementApi.Core.Services;
 
 
@@ -18,6 +19,7 @@ namespace TaskManagementApi.Core
         {
             services.AddScoped<ITaskItemService, TaskItemService>();
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<ISubtaskItemService, SubtaskItemService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IUnitOfService, UnitOfService>();
             services.AddAutoMapper(Assembly.GetExecutingAssembly());

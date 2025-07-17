@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TaskManagementApi.Core.DTOs.DTO_Tasks
+namespace TaskManagementApi.Core.DTOs.DTO_Subtask
 {
-    public class DTO_TaskGet
+    public class DTO_SubtaskGet
     {
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
@@ -15,14 +15,10 @@ namespace TaskManagementApi.Core.DTOs.DTO_Tasks
         public DateTime? DueDate { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public int ParentTaskId { get; set; }
+        public string UserId { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
         public bool IsDeleted { get; set; }
         public DateTime? DeletedAt { get; set; }
-        public bool IsNotificationEnabled { get; set; }
-        public DateTime? NotificationDateTime { get; set; }
-        public bool IsNotified { get; set; }
-        public string? AssignedToUserName { get; set; }
-        public string? AssignedByUserId { get; set; } // The ID of the user who assigned it
-        public string? AssignedByUserName { get; set; }
     }
 }
