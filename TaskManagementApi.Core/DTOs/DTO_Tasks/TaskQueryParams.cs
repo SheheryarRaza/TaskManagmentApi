@@ -21,6 +21,11 @@ namespace TaskManagementApi.Core.DTOs.DTO_Tasks
         [FromQuery(Name = "dueDateTo")]
         public DateTime? DueDateTo { get; set; }
 
+        [FromQuery(Name = "includeDeleted")] // NEW: Allow including soft-deleted tasks
+        public bool IncludeDeleted { get; set; } = false;
+
+        [FromQuery(Name = "includeNotified")] // NEW: Allow including tasks that have already been notified
+        public bool IncludeNotified { get; set; } = false;
 
         //sorting
         [FromQuery(Name = "sortBy")]

@@ -9,7 +9,10 @@ namespace TaskManagementApi.Core.Interface.IRepositories
     public interface IUnitOfWork
     {
         ITaskItemRepository TaskItemRepository { get; }
+
+        ISubtaskItemRepository SubtaskItemRepository { get; }
         int SaveChanges();
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
     }
 }

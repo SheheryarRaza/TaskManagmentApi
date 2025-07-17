@@ -12,6 +12,11 @@ namespace TaskManagementApi.Core.DTOs.DTO_Tasks
         public string? Description { get; set; }
         public bool IsCompleted { get; set; } = false;
         public DateTime? DueDate { get; set; }
+
+        public bool IsNotificationEnabled { get; set; } = false;
+        public DateTime? NotificationDateTime { get; set; }
         //public string UserId { get; set; } = string.Empty;
+        public string? AssignedToUserId { get; set; }
+
     }
 }

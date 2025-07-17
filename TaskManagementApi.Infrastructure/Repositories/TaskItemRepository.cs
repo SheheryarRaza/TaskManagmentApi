@@ -23,17 +23,14 @@ namespace TaskManagementApi.Core.Repositories
         {
             return await _context.TaskItems.ToListAsync();
         }
-
         public async Task<IQueryable<TaskItem>> GetAllTasksQueryable()
         {
             return _context.TaskItems.Include(t => t.User).AsQueryable();
         }
-
         public async Task<TaskItem?> GetTaskByIdAsync(int id)
         {
             return await _context.TaskItems.Include(t => t.User).IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == id);
         }
-
         public async Task AddTaskAsync(TaskItem taskItem)
         {
             _context.TaskItems.AddAsync(taskItem);
@@ -45,7 +42,6 @@ namespace TaskManagementApi.Core.Repositories
             taskItem.DeletedAt = DateTime.UtcNow;
             _context.TaskItems.Update(taskItem);
         }
-
         public async Task RestoreTaskAsync(TaskItem taskItem)
         {
             taskItem.IsDeleted = false;
@@ -53,12 +49,10 @@ namespace TaskManagementApi.Core.Repositories
             _context.TaskItems.Update(taskItem);
             await _context.SaveChangesAsync();
         }
-
         public async Task<bool> TaskItemExistsAsync(int id)
         {
-            return await _context.TaskItems.AnyAsync(e => e.Id == id);
+            return await _context.TaskItems.IgnoreQueryFilters().AnyAsync(e => e.Id == id);
         }
-
         public async Task<bool> UpdateTaskAsync(TaskItem taskItem)
         {
             _context.TaskItems.Update(taskItem);

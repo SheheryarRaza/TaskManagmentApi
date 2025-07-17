@@ -17,7 +17,7 @@ namespace TaskManagementApi.Core.Interface.IRepositories
         Task<string?> GenerateEmailConfirmationTokenAsync(User user);
         Task<bool> ConfirmEmailAsync(User user, string token);
         Task<IList<string>> GetRolesAsync(User user);
-
         Task<IdentityResult> UpdateUserAsync(User user);
+        Task<IList<string>> GetUserRolesAsync(User user);
     }
 }

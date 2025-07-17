@@ -17,6 +17,7 @@ namespace TaskManagementApi.Core.Data
         }
 
         public DbSet<TaskItem> TaskItems { get; set; }
+        public DbSet<SubTaskItem> SubTaskItems {  get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -30,6 +31,13 @@ namespace TaskManagementApi.Core.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<TaskItem>()
+                .HasOne(t => t.AssignedByUser) // A TaskItem has one User (assigner)
+                .WithMany()                    // A User can assign many TaskItems
+                .HasForeignKey(t => t.AssignedByUserId) // The foreign key property for assigner
+                .IsRequired(false)             // AssignedByUserId is optional
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TaskItem>()
                 .Property(t => t.CreatedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
 
@@ -37,8 +45,44 @@ namespace TaskManagementApi.Core.Data
                 .Property(t => t.UpdatedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
 
+            modelBuilder.Entity<TaskItem>()
+               .Property(t => t.IsNotificationEnabled)
+               .HasDefaultValue(false);
+
+            modelBuilder.Entity<TaskItem>()
+                .Property(t => t.IsNotified)
+                .HasDefaultValue(false);
+
             modelBuilder.Entity<TaskItem>().HasQueryFilter(t => !t.IsDeleted);
 
+            modelBuilder.Entity<SubTaskItem>()
+                .HasOne(st => st.ParentTask) // A SubTaskItem has one ParentTask
+                .WithMany(t => t.SubTasks) // A ParentTask can have many SubTasks
+                .HasForeignKey(st => st.ParentTaskId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade); // If a parent task is deleted, its subtasks are also deleted
+
+            modelBuilder.Entity<SubTaskItem>()
+                .HasOne(st => st.User)
+                .WithMany()
+                .HasForeignKey(st => st.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure default values for SubTaskItem audit and soft delete fields
+            modelBuilder.Entity<SubTaskItem>()
+                .Property(st => st.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            modelBuilder.Entity<SubTaskItem>()
+                .Property(st => st.UpdatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            modelBuilder.Entity<SubTaskItem>()
+                .Property(st => st.IsDeleted)
+                .HasDefaultValue(false);
+
+            modelBuilder.Entity<SubTaskItem>().HasQueryFilter(st => !st.IsDeleted && !st.ParentTask.IsDeleted);
         }
 
         public override int SaveChanges()
@@ -65,6 +109,7 @@ namespace TaskManagementApi.Core.Data
                         taskItem.UpdatedAt = DateTime.UtcNow;
                         taskItem.IsDeleted = false;
                         taskItem.DeletedAt = null;
+                        taskItem.IsNotified = false;
                     }
                     else if (entry.State == EntityState.Modified)
                     {
@@ -79,12 +124,47 @@ namespace TaskManagementApi.Core.Data
                             taskItem.DeletedAt = null;
                         }
                         entry.Property("CreatedAt").IsModified = false;
+
+                        if (entry.Property(nameof(TaskItem.IsNotified)).IsModified == false)
+                        {
+                            entry.Property(nameof(TaskItem.IsNotified)).IsModified = false;
+                        }
                     }
                     else if (entry.State == EntityState.Deleted)
                     {
                         entry.State = EntityState.Modified;
                         taskItem.IsDeleted = true;
                         taskItem.DeletedAt = DateTime.UtcNow;
+                        taskItem.IsNotified = false;
+                    }
+                }
+                else if (entry.Entity is SubTaskItem subTaskItem)
+                {
+                    if (entry.State == EntityState.Added)
+                    {
+                        subTaskItem.CreatedAt = DateTime.UtcNow;
+                        subTaskItem.UpdatedAt = DateTime.UtcNow;
+                        subTaskItem.IsDeleted = false;
+                        subTaskItem.DeletedAt = null;
+                    }
+                    else if (entry.State == EntityState.Modified)
+                    {
+                        subTaskItem.UpdatedAt = DateTime.UtcNow;
+                        if (entry.Property(nameof(SubTaskItem.IsDeleted)).IsModified && subTaskItem.IsDeleted)
+                        {
+                            subTaskItem.DeletedAt = DateTime.UtcNow;
+                        }
+                        else if (entry.Property(nameof(SubTaskItem.IsDeleted)).IsModified && !subTaskItem.IsDeleted)
+                        {
+                            subTaskItem.DeletedAt = null;
+                        }
+                        entry.Property("CreatedAt").IsModified = false;
+                    }
+                    else if (entry.State == EntityState.Deleted)
+                    {
+                        entry.State = EntityState.Modified;
+                        subTaskItem.IsDeleted = true;
+                        subTaskItem.DeletedAt = DateTime.UtcNow;
                     }
                 }
             }

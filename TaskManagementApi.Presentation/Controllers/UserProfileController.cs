@@ -64,5 +64,12 @@ namespace TaskManagementApi.Presentation.Controllers
             return Ok(new { message });
         }
 
+        [HttpGet("roles")]
+        public async Task<ActionResult<IList<string>>> GetUserRoles()
+        {
+            var roles = await _unitOfService.AuthService.GetCurrentUserRolesAsync();
+            return Ok(roles);
+        }
+
     }
 }

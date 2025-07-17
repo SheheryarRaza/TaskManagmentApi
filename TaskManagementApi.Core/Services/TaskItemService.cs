@@ -20,12 +20,14 @@ namespace TaskManagementApi.Core.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
+        private readonly IUserRepository _userRepository;
 
-        public TaskItemService(IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor, IMapper mapper)
+        public TaskItemService(IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor, IMapper mapper, IUserRepository userRepository)
         {
             _unitOfWork = unitOfWork;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
+            _userRepository = userRepository;
         }
         private string GetCurrentUserId()
         {
@@ -36,11 +38,37 @@ namespace TaskManagementApi.Core.Services
             }
             return userId;
         }
+
+        private async Task<bool> IsCurrentUserAdminAsync()
+        {
+            var currentUser = await _userRepository.GetUserByIdAsync(GetCurrentUserId());
+            if (currentUser == null) return false;
+            var roles = await _userRepository.GetUserRolesAsync(currentUser);
+            return roles.Contains("Admin");
+        }
         public async Task<DTO_PaginatedResult<DTO_TaskGet>> GetAllTaskAsync(TaskQueryParams queryParams)
         {
             var currentUserId = GetCurrentUserId();
-            IQueryable<TaskItem> query = (await _unitOfWork.TaskItemRepository.GetAllTasksQueryable())
-                                        .Where(t => t.UserId == currentUserId);
+            var isAdmin = await IsCurrentUserAdminAsync();
+
+            IQueryable<TaskItem> query = (await _unitOfWork.TaskItemRepository.GetAllTasksQueryable());
+
+            if (isAdmin)
+            {
+                query = query.Where(t => t.AssignedByUserId == currentUserId || t.UserId == currentUserId);
+            }
+            else
+            {
+                query = query.Where(t => t.UserId == currentUserId);
+            }
+            if (!queryParams.IncludeDeleted)
+            {
+                query = query.Where(t => !t.IsDeleted);
+            }
+            if (!queryParams.IncludeNotified)
+            {
+                query = query.Where(t => !t.IsNotified);
+            }
 
             //Fitering
             if (!string.IsNullOrWhiteSpace(queryParams.Search))
@@ -59,7 +87,6 @@ namespace TaskManagementApi.Core.Services
             }
             if (queryParams.DueDateTo.HasValue)
             {
-                // Add one day to include tasks due on the exact DueDateTo
                 query = query.Where(t => t.DueDate <= queryParams.DueDateTo.Value.AddDays(1));
             }
 
@@ -68,22 +95,28 @@ namespace TaskManagementApi.Core.Services
             // 2. Sorting
             if (!string.IsNullOrWhiteSpace(queryParams.SortBy))
             {
-                var parameter = Expression.Parameter(typeof(TaskItem), "t");
-                var property = Expression.Property(parameter, queryParams.SortBy);
-                var lambda = Expression.Lambda(property, parameter);
+                Expression<Func<TaskItem, object>> orderByExpression = queryParams.SortBy.ToLower() switch
+                {
+                    "title" => t => t.Title,
+                    "description" => t => t.Description!,
+                    "iscompleted" => t => t.IsCompleted,
+                    "duedate" => t => t.DueDate!,
+                    "createdat" => t => t.CreatedAt,
+                    "updatedat" => t => t.UpdatedAt,
+                    _ => t => t.CreatedAt // Default sort
+                };
 
                 if (queryParams.SortOrder?.ToLower() == "desc")
                 {
-                    query = Queryable.OrderByDescending(query, (dynamic)lambda);
+                    query = query.OrderByDescending(orderByExpression);
                 }
                 else
                 {
-                    query = Queryable.OrderBy(query, (dynamic)lambda);
+                    query = query.OrderBy(orderByExpression);
                 }
             }
             else
             {
-                // Default sorting if no SortBy is provided
                 query = query.OrderByDescending(t => t.CreatedAt);
             }
 
@@ -93,7 +126,6 @@ namespace TaskManagementApi.Core.Services
                 .Take(queryParams.AdjustedPageSize)
                 .ToListAsync();
 
-            // Map TaskItem entities to TaskGetDto
             var mappedTasks = _mapper.Map<IEnumerable<DTO_TaskGet>>(pagedTasks);
 
             return new DTO_PaginatedResult<DTO_TaskGet>
@@ -104,47 +136,125 @@ namespace TaskManagementApi.Core.Services
                 PageSize = queryParams.AdjustedPageSize
             };
         }
-
         public async Task<DTO_TaskGet?> GetTaskByIdAsync(int id)
         {
             var currentUserId = GetCurrentUserId();
+            var isAdmin = await IsCurrentUserAdminAsync();
             var taskItem = await _unitOfWork.TaskItemRepository.GetTaskByIdAsync(id);
 
-            if (taskItem == null || taskItem.UserId != currentUserId)
+            if (taskItem == null || (isAdmin && taskItem.AssignedByUserId != currentUserId && taskItem.UserId != currentUserId) || (!isAdmin && taskItem.UserId != currentUserId))
             {
                 return null;
             }
 
             return _mapper.Map<DTO_TaskGet>(taskItem);
         }
-        public async Task<DTO_TaskGet> CreateTaskAsync(DTO_TaskPost taskPost)
+        public async Task<DTO_TaskGet> CreateTaskAsync(DTO_TaskPost taskPost, bool isAdmin, string currentUserId)
         {
             var taskItem = _mapper.Map<TaskItem>(taskPost);
-            taskItem.UserId = GetCurrentUserId();
+
+            if (isAdmin)
+            {
+                if (!string.IsNullOrEmpty(taskPost.AssignedToUserId))
+                {
+                    var assignedUser = await _userRepository.GetUserByIdAsync(taskPost.AssignedToUserId);
+                    if (assignedUser == null)
+                    {
+                        throw new ArgumentException("Assigned user not found.");
+                    }
+                    taskItem.UserId = assignedUser.Id; // Assign to the specified user
+                    taskItem.AssignedByUserId = currentUserId;
+                    // Admin cannot set DueDate or NotificationDateTime for assigned tasks
+                    taskItem.DueDate = null;
+                    taskItem.IsNotificationEnabled = false;
+                    taskItem.NotificationDateTime = null;
+                }
+                else
+                {
+                    taskItem.UserId = currentUserId; // Assign to the current user
+                    taskItem.AssignedByUserId = currentUserId;
+                }
+            }
+            else
+            {
+                // Regular user creates a task for themselves
+                taskItem.UserId = currentUserId; // Assignee is the user
+                taskItem.AssignedByUserId = null; // Not assigned by an admin
+            }
+
+
             taskItem.CreatedAt = DateTime.UtcNow;
             taskItem.UpdatedAt = DateTime.UtcNow;
             taskItem.IsCompleted = false;
+            taskItem.IsDeleted = false;
+            taskItem.DeletedAt = null;
+            taskItem.IsNotified = false;
 
             await _unitOfWork.TaskItemRepository.AddTaskAsync(taskItem);
             await _unitOfWork.SaveChangesAsync();
             return _mapper.Map<DTO_TaskGet>(taskItem);
         }
-
-        public async Task<bool> UpdateTaskAsync(int id, DTO_TaskPut taskPut)
+        public async Task<bool> UpdateTaskAsync(int id, DTO_TaskPut taskPut, bool isAdmin, string currentUserId)
         {
-            var currentUserId = GetCurrentUserId();
             var existingTask = await _unitOfWork.TaskItemRepository.GetTaskByIdAsync(id);
 
-            if (existingTask == null || existingTask.UserId != currentUserId)
+            // Admin can update any task, regular users can only update their own
+            if (existingTask == null || existingTask.IsDeleted) // Cannot update a soft-deleted task
             {
                 return false;
             }
 
-            existingTask.Title = taskPut.Title;
-            existingTask.Description = taskPut.Description;
-            existingTask.IsCompleted = taskPut.IsCompleted;
-            existingTask.DueDate = taskPut.DueDate;
-            existingTask.UpdatedAt = DateTime.UtcNow;
+            if (isAdmin)
+            {
+                if (existingTask.AssignedByUserId != currentUserId && existingTask.UserId != currentUserId)
+                {
+                    return false; // Admin cannot update tasks they didn't assign and are not assigned to them
+                }
+            }
+            else // Regular user
+            {
+                if (existingTask.UserId != currentUserId)
+                {
+                    return false; // Regular user can only update their own tasks
+                }
+            }
+
+            // Admin reassignment logic
+            if (isAdmin && !string.IsNullOrEmpty(taskPut.AssignedToUserId) && existingTask.UserId != taskPut.AssignedToUserId)
+            {
+                var newAssignedUser = await _userRepository.GetUserByIdAsync(taskPut.AssignedToUserId);
+                if (newAssignedUser == null)
+                {
+                    // If the assigned user ID is invalid, prevent the update or return an error
+                    return false; // Or throw new ArgumentException("New assigned user not found.");
+                }
+                existingTask.UserId = newAssignedUser.Id;
+                existingTask.AssignedByUserId = currentUserId;
+                existingTask.DueDate = null;
+                existingTask.IsNotificationEnabled = false;
+                existingTask.NotificationDateTime = null;
+                existingTask.IsNotified = false; // Reset notification status for the new assignee
+            }
+            else
+            {
+                _mapper.Map(taskPut, existingTask);
+
+                if (!isAdmin || existingTask.UserId == currentUserId)
+                {
+                    existingTask.DueDate = taskPut.DueDate;
+                    existingTask.IsNotificationEnabled = taskPut.IsNotificationEnabled;
+                    existingTask.NotificationDateTime = taskPut.NotificationDateTime;
+                }
+
+                if (existingTask.IsNotificationEnabled && existingTask.IsNotified &&
+                    (taskPut.IsNotificationEnabled != existingTask.IsNotificationEnabled ||
+                     taskPut.NotificationDateTime != existingTask.NotificationDateTime))
+                {
+                    existingTask.IsNotified = false;
+                }
+            }
+
+            existingTask.UpdatedAt = DateTime.UtcNow; // Update timestamp
 
             await _unitOfWork.TaskItemRepository.UpdateTaskAsync(existingTask);
             await _unitOfWork.SaveChangesAsync();
@@ -153,8 +263,16 @@ namespace TaskManagementApi.Core.Services
         public async Task<bool> DeleteTaskAsync(int id)
         {
             var currentUserId = GetCurrentUserId();
+            var isAdmin = await IsCurrentUserAdminAsync();
+
+            if (!isAdmin)
+            {
+                return false; // Unauthorized
+            }
+
             var taskItem = await _unitOfWork.TaskItemRepository.GetTaskByIdAsync(id);
-            if (taskItem == null || taskItem.UserId != currentUserId)
+
+            if (taskItem == null || taskItem.IsDeleted) // Cannot delete an already soft-deleted task
             {
                 return false;
             }
@@ -162,20 +280,56 @@ namespace TaskManagementApi.Core.Services
             await _unitOfWork.SaveChangesAsync();
             return true;
         }
-
         public async Task<bool> RestoreTaskAsync(int id)
         {
             var currentUser = GetCurrentUserId();
+            var isAdmin = await IsCurrentUserAdminAsync();
+
+            if (!isAdmin)
+            {
+                return false; // Unauthorized
+            }
 
             var taskItem = await _unitOfWork.TaskItemRepository.GetTaskByIdAsync(id);
-            if (taskItem == null || taskItem.UserId != currentUser)
+            if (taskItem == null || !taskItem.IsDeleted) // Can only restore if it exists and is soft-deleted
             {
                 return false;
             }
 
             await _unitOfWork.TaskItemRepository.RestoreTaskAsync(taskItem);
+            taskItem.IsNotified = false;
             await _unitOfWork.SaveChangesAsync();
             return true;
+        }
+        public async Task<bool> MarkTaskAsNotifiedAsync(int id) // NEW: For background service to mark as notified
+        {
+            var taskItem = await _unitOfWork.TaskItemRepository.GetTaskByIdAsync(id);
+
+            if (taskItem == null || taskItem.IsDeleted || taskItem.IsCompleted || taskItem.IsNotified)
+            {
+                return false;
+            }
+
+            taskItem.IsNotified = true;
+            await _unitOfWork.TaskItemRepository.UpdateTaskAsync(taskItem);
+            await _unitOfWork.SaveChangesAsync();
+            return true;
+        }
+        public async Task<IEnumerable<TaskItem>> GetTasksForNotificationAsync(TimeSpan notificationLeadTime)
+        {
+            var now = DateTime.UtcNow;
+            var notificationWindowStart = now.Add(notificationLeadTime);
+
+            var tasksQueryable = await _unitOfWork.TaskItemRepository.GetAllTasksQueryable();
+
+            return tasksQueryable
+                .Where(t => t.IsNotificationEnabled &&
+                            !t.IsNotified && // Only tasks not yet notified
+                            !t.IsCompleted && // Only incomplete tasks
+                            t.NotificationDateTime.HasValue &&
+                            t.NotificationDateTime.Value <= notificationWindowStart &&
+                            t.NotificationDateTime.Value >= now) // Within the notification window
+                .ToList();
         }
     }
 }
