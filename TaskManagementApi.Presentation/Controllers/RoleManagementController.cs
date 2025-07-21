@@ -9,7 +9,7 @@ namespace TaskManagementApi.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     public class RoleManagementController : ControllerBase
     {
         private readonly IUnitOfService _unitOfService;
@@ -74,6 +74,24 @@ namespace TaskManagementApi.Presentation.Controllers
             }
 
             var (success, message) = await _unitOfService.AuthService.RemoveUserFromRoleAsync(userId, roleName);
+
+            if (!success)
+            {
+                return BadRequest(new { message });
+            }
+
+            return Ok(new { message });
+        }
+
+        [HttpPost("register-with-role")]
+        public async Task<IActionResult> AdminRegisterUserWithRole([FromBody] DTO_AdminRegisterUser request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var (success, message) = await _unitOfService.AuthService.AdminRegisterUserAndAssignRoleAsync(request.Email, request.Password, request.RoleName);
 
             if (!success)
             {
