@@ -16,13 +16,19 @@ namespace TaskManagementApi.Core.Interface
 
         Task<User?> GetCurrentUserAsync();
 
-        Task<DTO_UserGet?> GetUserProfileAsync();
+        Task<DTO_GetUser?> GetUserProfileAsync();
 
         Task<IList<string>> GetCurrentUserRolesAsync();
 
         Task<(bool Success, string? Message)> UpdateUserProfileAsync(DTO_UpdateUser updateUser);
 
         Task<(bool Success, string? Message)> ChangePasswordAsync(DTO_ChangePassowrd changePassword);
+        Task<IList<string>> GetAllRolesAsync();
+
+        Task<User?> GetUserByIdAsync(string userId);
+        Task<IList<string>> GetUserRolesAsync(string userId);
+        Task<(bool Success, string? Message)> AddUserToRoleAsync(string userId, string roleName);
+        Task<(bool Success, string? Message)> RemoveUserFromRoleAsync(string userId, string roleName);
 
 
     }

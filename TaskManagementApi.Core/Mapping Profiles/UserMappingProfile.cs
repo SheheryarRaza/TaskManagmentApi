@@ -13,7 +13,7 @@ namespace TaskManagementApi.Core.Mapping_Profiles
     {
         public UserMappingProfile()
         {
-            CreateMap<User, DTO_UserGet>();
+            CreateMap<User, DTO_GetUser>();
 
             CreateMap<DTO_UpdateUser, User>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())

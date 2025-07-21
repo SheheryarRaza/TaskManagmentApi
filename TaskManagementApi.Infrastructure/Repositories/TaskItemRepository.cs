@@ -25,7 +25,10 @@ namespace TaskManagementApi.Core.Repositories
         }
         public async Task<IQueryable<TaskItem>> GetAllTasksQueryable()
         {
-            return _context.TaskItems.Include(t => t.User).AsQueryable();
+            return _context.TaskItems
+                .Include(t => t.User)
+                .Include(t => t.AssignedByUser)
+                .AsQueryable();
         }
         public async Task<TaskItem?> GetTaskByIdAsync(int id)
         {

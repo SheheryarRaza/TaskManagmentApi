@@ -149,6 +149,96 @@ namespace TaskManagementApi.Core.Services
 
             return _mapper.Map<DTO_TaskGet>(taskItem);
         }
+
+        public async Task<DTO_PaginatedResult<DTO_TaskGet>> GetMyAssignedTasksAsync(TaskQueryParams queryParams, string currentUserId)
+        {
+            // Start with all tasks, but filter only for tasks where the current user is the assignee (UserId)
+            IQueryable<TaskItem> query = await _unitOfWork.TaskItemRepository.GetAllTasksQueryable();
+
+            query = query.Where(t => t.UserId == currentUserId);
+
+            // Apply soft delete filter unless explicitly included
+            if (!queryParams.IncludeDeleted)
+            {
+                query = query.Where(t => !t.IsDeleted);
+            }
+
+            // Apply notified filter unless explicitly included
+            if (!queryParams.IncludeNotified)
+            {
+                query = query.Where(t => !t.IsNotified);
+            }
+
+            // 1. Filtering (same as GetAllTasksAsync)
+            if (!string.IsNullOrWhiteSpace(queryParams.Search))
+            {
+                string searchLower = queryParams.Search.ToLower();
+                query = query.Where(t => t.Title.ToLower().Contains(searchLower) ||
+                                         (t.Description != null && t.Description.ToLower().Contains(searchLower)));
+            }
+
+            if (queryParams.IsCompleted.HasValue)
+            {
+                query = query.Where(t => t.IsCompleted == queryParams.IsCompleted.Value);
+            }
+
+            if (queryParams.DueDateFrom.HasValue)
+            {
+                query = query.Where(t => t.DueDate >= queryParams.DueDateFrom.Value);
+            }
+
+            if (queryParams.DueDateTo.HasValue)
+            {
+                query = query.Where(t => t.DueDate <= queryParams.DueDateTo.Value.AddDays(1));
+            }
+
+            int totalCount = await query.CountAsync();
+
+            // 2. Sorting (same as GetAllTasksAsync)
+            if (!string.IsNullOrWhiteSpace(queryParams.SortBy))
+            {
+                Expression<Func<TaskItem, object>> orderByExpression = queryParams.SortBy.ToLower() switch
+                {
+                    "title" => t => t.Title,
+                    "description" => t => t.Description!,
+                    "iscompleted" => t => t.IsCompleted,
+                    "duedate" => t => t.DueDate!,
+                    "createdat" => t => t.CreatedAt,
+                    "updatedat" => t => t.UpdatedAt,
+                    _ => t => t.CreatedAt
+                };
+
+                if (queryParams.SortOrder?.ToLower() == "desc")
+                {
+                    query = query.OrderByDescending(orderByExpression);
+                }
+                else
+                {
+                    query = query.OrderBy(orderByExpression);
+                }
+            }
+            else
+            {
+                query = query.OrderByDescending(t => t.CreatedAt);
+            }
+
+            // 3. Pagination (same as GetAllTasksAsync)
+            var pagedTasks = await query
+                .Skip((queryParams.PageNumber - 1) * queryParams.AdjustedPageSize)
+                .Take(queryParams.AdjustedPageSize)
+                .ToListAsync();
+
+            var mappedTasks = _mapper.Map<IEnumerable<DTO_TaskGet>>(pagedTasks);
+
+            return new DTO_PaginatedResult<DTO_TaskGet>
+            {
+                Items = mappedTasks,
+                TotalCount = totalCount,
+                PageNumber = queryParams.PageNumber,
+                PageSize = queryParams.AdjustedPageSize
+            };
+        }
+
         public async Task<DTO_TaskGet> CreateTaskAsync(DTO_TaskPost taskPost, bool isAdmin, string currentUserId)
         {
             var taskItem = _mapper.Map<TaskItem>(taskPost);
