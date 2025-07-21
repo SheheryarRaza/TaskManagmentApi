@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using TaskManagementApi.Core.DTOs.DTO_User;
 using TaskManagementApi.Core.Entities;
@@ -27,8 +28,9 @@ namespace TaskManagementApi.Core.Services
         private readonly IMapper _mapper;
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly ILogger<AuthService> _logger;
 
-        public AuthService(IUserRepository userRepository, IConfiguration configuration, IHttpContextAccessor httpContextAccessor, IMapper mapper, UserManager<User> userManager, RoleManager<IdentityRole> roleManager)
+        public AuthService(IUserRepository userRepository, IConfiguration configuration, IHttpContextAccessor httpContextAccessor, IMapper mapper, UserManager<User> userManager, RoleManager<IdentityRole> roleManager, ILogger<AuthService> logger)
         {
             _userRepository = userRepository;
             _configuration = configuration;
@@ -36,6 +38,7 @@ namespace TaskManagementApi.Core.Services
             _mapper = mapper;
             _userManager = userManager;
             _roleManager = roleManager;
+            _logger = logger;
         }
 
         public Task<User?> GetCurrentUserAsync()
@@ -68,22 +71,33 @@ namespace TaskManagementApi.Core.Services
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]!);
+            var roles = await _userManager.GetRolesAsync(user); // Get user roles
+
+            // NEW: Log the roles retrieved
+            _logger.LogInformation($"Login: User '{user.UserName}' (ID: {user.Id}) retrieved roles: {string.Join(", ", roles)}");
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id), // User ID
+                new Claim(ClaimTypes.Email, user.Email!), // User Email
+                new Claim(ClaimTypes.Name, user.UserName!) // User Name
+            };
+
+            // Add roles as claims
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new Claim[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id),
-                    new Claim(ClaimTypes.Email, user.Email),
-                    new Claim(ClaimTypes.Name, user.UserName)
-                }),
-                Expires = DateTime.UtcNow.AddHours(1),
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddHours(1), // Token expiry time
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
-                Issuer = _configuration["Jwt:Issuer"],
-                Audience = _configuration["Jwt:Audience"]
-
+                Issuer = _configuration["Jwt:Issuer"], // Ensure Jwt:Issuer is in appsettings.json
+                Audience = _configuration["Jwt:Audience"] // Ensure Jwt:Audience is in appsettings.json
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
-            return (true, tokenHandler.WriteToken(token), null);
+            return (true, tokenHandler.WriteToken(token), "Login successful.");
         }
 
         public async Task<(bool Success, string? Message)> RegisterAsync(string email, string password)
@@ -107,7 +121,9 @@ namespace TaskManagementApi.Core.Services
                 return (false, "User registration failed.");
             }
 
-            return (true, "User Registered Successfully.");
+            await _userManager.AddToRoleAsync(user, "User");
+
+            return (true, "User registered successfully.");
         }
 
         public async Task<(bool Success, string? Message)> UpdateUserProfileAsync(DTO_UpdateUser updateUser)
@@ -221,7 +237,6 @@ namespace TaskManagementApi.Core.Services
         {
             return await _userRepository.GetUserByIdAsync(userId);
         }
-
         public async Task<IList<string>> GetUserRolesAsync(string userId)
         {
             var user = await _userRepository.GetUserByIdAsync(userId);
@@ -232,6 +247,53 @@ namespace TaskManagementApi.Core.Services
             return await _userRepository.GetUserRolesAsync(user);
         }
 
+        public async Task<(bool Success, string? Message)> CreateRoleAsync(string roleName)
+        {
+            if (await _roleManager.RoleExistsAsync(roleName))
+            {
+                return (false, $"Role '{roleName}' already exists.");
+            }
+
+            var result = await _roleManager.CreateAsync(new IdentityRole(roleName));
+            if (!result.Succeeded)
+            {
+                return (false, string.Join("; ", result.Errors.Select(e => e.Description)));
+            }
+
+            return (true, $"Role '{roleName}' created successfully.");
+        }
+
+        public async Task<(bool Success, string? Message)> AdminRegisterUserAndAssignRoleAsync(string email, string password, string roleName)
+        {
+            var existingUser = await _userRepository.GetUserByEmailAsync(email);
+            if (existingUser != null)
+            {
+                return (false, "User with this email already exists.");
+            }
+
+            if (!await _roleManager.RoleExistsAsync(roleName))
+            {
+                return (false, $"Role '{roleName}' does not exist.");
+            }
+
+            var user = new User { UserName = email, Email = email };
+            var createResult = await _userManager.CreateAsync(user, password);
+
+            if (!createResult.Succeeded)
+            {
+                return (false, string.Join("; ", createResult.Errors.Select(e => e.Description)));
+            }
+
+            var assignRoleResult = await _userManager.AddToRoleAsync(user, roleName);
+            if (!assignRoleResult.Succeeded)
+            {
+                // If role assignment fails, consider deleting the newly created user
+                await _userManager.DeleteAsync(user);
+                return (false, $"User created but failed to assign role: {string.Join("; ", assignRoleResult.Errors.Select(e => e.Description))}");
+            }
+
+            return (true, $"User '{user.UserName}' registered and assigned to role '{roleName}' successfully.");
+        }
 
     }
 }

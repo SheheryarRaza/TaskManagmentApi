@@ -1,6 +1,7 @@
 using TaskManagementApi.Core;
 using TaskManagementApi.Infrastructure;
 using TaskManagementApi.Infrastructure.Background_Services;
+using TaskManagementApi.Presentation.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +60,8 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication(); // Enables authentication middleware
 app.UseAuthorization();
+
+app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.MapControllers(); // This maps the routes for your MVC controllers
 

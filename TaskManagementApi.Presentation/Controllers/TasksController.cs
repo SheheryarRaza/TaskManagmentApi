@@ -113,6 +113,7 @@ namespace TaskManagementApi.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<TaskItem>> DeleteTaskItem(int id)
         {
             var result = await _unitOfService.TaskItemService.DeleteTaskAsync(id);
@@ -124,6 +125,7 @@ namespace TaskManagementApi.Presentation.Controllers
         }
 
         [HttpPost("{id}/restore")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> RestoreTaskItem(int id)
         {
             var result = await _unitOfService.TaskItemService.RestoreTaskAsync(id);
