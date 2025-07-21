@@ -55,6 +55,14 @@ namespace TaskManagementApi.Presentation.Controllers
             return Ok(taskItem);
         }
 
+        [HttpGet("MyAssignedTasks")]
+        public async Task<ActionResult<DTO_PaginatedResult<DTO_TaskGet>>> GetMyAssignedTaskItems([FromQuery] TaskQueryParams queryParams)
+        {
+            var currentUserId = GetCurrentUserId();
+            var paginatedTasks = await _unitOfService.TaskItemService.GetMyAssignedTasksAsync(queryParams, currentUserId);
+            return Ok(paginatedTasks);
+        }
+
         [HttpPost]
         public async Task<ActionResult<TaskItem>> PostTaskItem(DTO_TaskPost taskPost)
         {

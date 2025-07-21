@@ -20,7 +20,7 @@ namespace TaskManagementApi.Presentation.Controllers
 
         // GET: api/UserProfile
         [HttpGet]
-        public async Task<ActionResult<DTO_UserGet>> GetUserProfile()
+        public async Task<ActionResult<DTO_GetUser>> GetUserProfile()
         {
             var userProfile = await _unitOfService.AuthService.GetUserProfileAsync();
             if (userProfile == null)

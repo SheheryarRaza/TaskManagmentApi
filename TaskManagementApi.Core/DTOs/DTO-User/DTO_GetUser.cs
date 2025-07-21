@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TaskManagementApi.Core.DTOs.DTO_User
 {
-    public class DTO_UserGet
+    public class DTO_GetUser
     {
         public string Id { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
