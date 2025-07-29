@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TaskManagementApi.Core.Enumerations;
 
 namespace TaskManagementApi.Core.Entities
 {
@@ -35,5 +36,7 @@ namespace TaskManagementApi.Core.Entities
         [Required]
         public string UserId { get; set; } = string.Empty;
         public User User { get; set; } = default!;
+
+        public TaskPriority Priority { get; set; } = TaskPriority.Medium;
     }
 }

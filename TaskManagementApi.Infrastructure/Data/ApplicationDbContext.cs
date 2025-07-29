@@ -18,15 +18,17 @@ namespace TaskManagementApi.Core.Data
 
         public DbSet<TaskItem> TaskItems { get; set; }
         public DbSet<SubTaskItem> SubTaskItems {  get; set; }
+        public DbSet<Tag> Tags { get; set; } 
+        public DbSet<TaskItemTag> TaskItemTags { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<TaskItem>()
-                .HasOne(t => t.User) // A TaskItem has one User
-                .WithMany()          // A User can have many TaskItems (no navigation property back to tasks on User)
-                .HasForeignKey(t => t.UserId) // The foreign key property
+                .HasOne(t => t.User)
+                .WithMany()
+                .HasForeignKey(t => t.UserId)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
 
@@ -54,6 +56,10 @@ namespace TaskManagementApi.Core.Data
                 .HasDefaultValue(false);
 
             modelBuilder.Entity<TaskItem>().HasQueryFilter(t => !t.IsDeleted);
+
+            modelBuilder.Entity<TaskItem>()
+                .Property(t => t.Priority)
+                .HasConversion<string>();
 
             modelBuilder.Entity<SubTaskItem>()
                 .HasOne(st => st.ParentTask) // A SubTaskItem has one ParentTask
@@ -83,6 +89,29 @@ namespace TaskManagementApi.Core.Data
                 .HasDefaultValue(false);
 
             modelBuilder.Entity<SubTaskItem>().HasQueryFilter(st => !st.IsDeleted && !st.ParentTask.IsDeleted);
+
+            modelBuilder.Entity<SubTaskItem>()
+               .Property(st => st.Priority)
+               .HasConversion<string>(); // Store enum as string in DB
+
+            modelBuilder.Entity<Tag>()
+                .HasIndex(t => t.Name)
+                .IsUnique();
+
+            modelBuilder.Entity<TaskItemTag>()
+                .HasKey(tit => new { tit.TaskItemId, tit.TagId });
+
+            modelBuilder.Entity<TaskItemTag>()
+                .HasOne(tit => tit.TaskItem)
+                .WithMany(ti => ti.TaskItemTags)
+                .HasForeignKey(tit => tit.TaskItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TaskItemTag>()
+                .HasOne(tit => tit.Tag)
+                .WithMany(t => t.TaskItemTags)
+                .HasForeignKey(tit => tit.TagId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
         public override int SaveChanges()

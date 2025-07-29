@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using TaskManagementApi.Core.Enumerations;
 
 namespace TaskManagementApi.Core.DTOs.DTO_Subtask
 {
@@ -23,6 +24,9 @@ namespace TaskManagementApi.Core.DTOs.DTO_Subtask
 
         [FromQuery(Name = "includeDeleted")]
         public bool IncludeDeleted { get; set; } = false;
+
+        [FromQuery(Name = "priority")]
+        public TaskPriority? Priority { get; set; } = null;
 
         // Sorting
         [FromQuery(Name = "sortBy")]

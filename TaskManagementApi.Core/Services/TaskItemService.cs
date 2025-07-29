@@ -22,12 +22,14 @@ namespace TaskManagementApi.Core.Services
         private readonly IMapper _mapper;
         private readonly IUserRepository _userRepository;
 
+
         public TaskItemService(IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor, IMapper mapper, IUserRepository userRepository)
         {
             _unitOfWork = unitOfWork;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
             _userRepository = userRepository;
+
         }
         private string GetCurrentUserId()
         {
@@ -89,6 +91,18 @@ namespace TaskManagementApi.Core.Services
             {
                 query = query.Where(t => t.DueDate <= queryParams.DueDateTo.Value.AddDays(1));
             }
+            if (queryParams.Priority.HasValue)
+            {
+                query = query.Where(t => t.Priority == queryParams.Priority.Value);
+            }
+            if (queryParams.Tags != null && queryParams.Tags.Any())
+            {
+                // Filter tasks that have ALL specified tags
+                foreach (var tagName in queryParams.Tags)
+                {
+                    query = query.Where(t => t.TaskItemTags.Any(tit => tit.Tag.Name == tagName));
+                }
+            }
 
             int totalCount = await query.CountAsync();
 
@@ -103,6 +117,7 @@ namespace TaskManagementApi.Core.Services
                     "duedate" => t => t.DueDate!,
                     "createdat" => t => t.CreatedAt,
                     "updatedat" => t => t.UpdatedAt,
+                    "priority" => t => t.Priority,
                     _ => t => t.CreatedAt // Default sort
                 };
 
@@ -192,6 +207,19 @@ namespace TaskManagementApi.Core.Services
                 query = query.Where(t => t.DueDate <= queryParams.DueDateTo.Value.AddDays(1));
             }
 
+            if (queryParams.Priority.HasValue)
+            {
+                query = query.Where(t => t.Priority == queryParams.Priority.Value);
+            }
+
+            if (queryParams.Tags != null && queryParams.Tags.Any())
+            {
+                foreach (var tagName in queryParams.Tags)
+                {
+                    query = query.Where(t => t.TaskItemTags.Any(tit => tit.Tag.Name == tagName));
+                }
+            }
+
             int totalCount = await query.CountAsync();
 
             // 2. Sorting (same as GetAllTasksAsync)
@@ -205,6 +233,7 @@ namespace TaskManagementApi.Core.Services
                     "duedate" => t => t.DueDate!,
                     "createdat" => t => t.CreatedAt,
                     "updatedat" => t => t.UpdatedAt,
+                    "priority" => t => t.Priority,
                     _ => t => t.CreatedAt
                 };
 
@@ -280,6 +309,20 @@ namespace TaskManagementApi.Core.Services
             taskItem.DeletedAt = null;
             taskItem.IsNotified = false;
 
+            if (taskPost.Tags != null && taskPost.Tags.Any())
+            {
+                foreach (var tagName in taskPost.Tags)
+                {
+                    var tag = await _unitOfWork.TagRepository.GetTagByNameAsync(tagName);
+                    if (tag == null)
+                    {
+                        tag = new Tag { Name = tagName };
+                        await _unitOfWork.TagRepository.AddTagAsync(tag);
+                    }
+                    taskItem.TaskItemTags.Add(new TaskItemTag { Tag = tag });
+                }
+            }
+
             await _unitOfWork.TaskItemRepository.AddTaskAsync(taskItem);
             await _unitOfWork.SaveChangesAsync();
             return _mapper.Map<DTO_TaskGet>(taskItem);
@@ -341,6 +384,22 @@ namespace TaskManagementApi.Core.Services
                      taskPut.NotificationDateTime != existingTask.NotificationDateTime))
                 {
                     existingTask.IsNotified = false;
+                }
+            }
+
+            if (taskPut.Tags != null)
+            {
+                // Clear existing tags
+                existingTask.TaskItemTags.Clear();
+                foreach (var tagName in taskPut.Tags)
+                {
+                    var tag = await _unitOfWork.TagRepository.GetTagByNameAsync(tagName);
+                    if (tag == null)
+                    {
+                        tag = new Tag { Name = tagName };
+                        await _unitOfWork.TagRepository.AddTagAsync(tag);
+                    }
+                    existingTask.TaskItemTags.Add(new TaskItemTag { Tag = tag });
                 }
             }
 

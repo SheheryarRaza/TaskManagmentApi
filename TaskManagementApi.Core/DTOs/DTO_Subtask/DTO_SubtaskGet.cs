@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TaskManagementApi.Core.Enumerations;
 
 namespace TaskManagementApi.Core.DTOs.DTO_Subtask
 {
@@ -20,5 +21,7 @@ namespace TaskManagementApi.Core.DTOs.DTO_Subtask
         public string UserName { get; set; } = string.Empty;
         public bool IsDeleted { get; set; }
         public DateTime? DeletedAt { get; set; }
+
+        public TaskPriority Priority { get; set; }
     }
 }

@@ -15,6 +15,7 @@ namespace TaskManagementApi.Core.Repositories
         private readonly ApplicationDbContext _context;
         private ITaskItemRepository? _taskItemRepository;
         private ISubtaskItemRepository? _subtaskItemRepository;
+        private ITagRepository _tagRepository;
 
         public UnitOfWork(ApplicationDbContext context)
         {
@@ -35,6 +36,15 @@ namespace TaskManagementApi.Core.Repositories
             {
                 _subtaskItemRepository ??= new SubtaskItemRepository(_context);
                 return _subtaskItemRepository;
+            }
+        }
+
+        public ITagRepository TagRepository
+        {
+            get
+            {
+                _tagRepository ??= new TagRepository(_context);
+                return _tagRepository;
             }
         }
 

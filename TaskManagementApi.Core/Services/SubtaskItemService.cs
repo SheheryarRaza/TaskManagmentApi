@@ -93,6 +93,10 @@ namespace TaskManagementApi.Core.Services
             {
                 query = query.Where(st => st.DueDate <= queryParams.DueDateTo.Value.AddDays(1));
             }
+            if (queryParams.Priority.HasValue)
+            {
+                query = query.Where(st => st.Priority == queryParams.Priority.Value);
+            }
 
             int totalCount = await query.CountAsync();
 
@@ -107,6 +111,7 @@ namespace TaskManagementApi.Core.Services
                     "duedate" => st => st.DueDate!,
                     "createdat" => st => st.CreatedAt,
                     "updatedat" => st => st.UpdatedAt,
+                    "priority" => st => st.Priority,
                     _ => st => st.CreatedAt
                 };
 

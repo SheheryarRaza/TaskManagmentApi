@@ -28,11 +28,19 @@ namespace TaskManagementApi.Core.Repositories
             return _context.TaskItems
                 .Include(t => t.User)
                 .Include(t => t.AssignedByUser)
+                .Include(t => t.TaskItemTags)
+                    .ThenInclude(tit => tit.Tag)
                 .AsQueryable();
         }
         public async Task<TaskItem?> GetTaskByIdAsync(int id)
         {
-            return await _context.TaskItems.Include(t => t.User).IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == id);
+            return await _context.TaskItems
+                .Include(t => t.User)
+                .Include(t => t.AssignedByUser)
+                .Include(t => t.TaskItemTags)
+                        .ThenInclude(tit => tit.Tag)
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.Id == id);
         }
         public async Task AddTaskAsync(TaskItem taskItem)
         {

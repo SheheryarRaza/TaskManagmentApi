@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TaskManagementApi.Core.Data;
 using TaskManagementApi.Core.Entities;
+using TaskManagementApi.Core.Enumerations;
 
 namespace TaskManagementApi.Infrastructure
 {
@@ -97,6 +98,43 @@ namespace TaskManagementApi.Infrastructure
                     teamLeadUser = await userManager.FindByEmailAsync("teamlead@softwarehouse.com");
                     pmUser = await userManager.FindByEmailAsync("pm@softwarehouse.com");
 
+                    // Seed Tags
+                    var tagsToSeed = new List<Tag>
+                    {
+                        new Tag { Name = "Frontend" },
+                        new Tag { Name = "Backend" },
+                        new Tag { Name = "Database" },
+                        new Tag { Name = "Testing" },
+                        new Tag { Name = "Urgent" },
+                        new Tag { Name = "Documentation" },
+                        new Tag { Name = "Meeting" },
+                        new Tag { Name = "Bug" },
+                        new Tag { Name = "Feature" },
+                        new Tag { Name = "Refactoring" }
+                    };
+
+                    foreach (var tag in tagsToSeed)
+                    {
+                        if (!await context.Tags.AnyAsync(t => t.Name == tag.Name))
+                        {
+                            context.Tags.Add(tag);
+                            logger.LogInformation($"Tag '{tag.Name}' created.");
+                        }
+                    }
+                    await context.SaveChangesAsync(); // Save tags first to get their IDs
+
+                    // Retrieve seeded tags to associate with tasks
+                    var frontendTag = await context.Tags.FirstOrDefaultAsync(t => t.Name == "Frontend");
+                    var backendTag = await context.Tags.FirstOrDefaultAsync(t => t.Name == "Backend");
+                    var databaseTag = await context.Tags.FirstOrDefaultAsync(t => t.Name == "Database");
+                    var testingTag = await context.Tags.FirstOrDefaultAsync(t => t.Name == "Testing");
+                    var urgentTag = await context.Tags.FirstOrDefaultAsync(t => t.Name == "Urgent");
+                    var documentationTag = await context.Tags.FirstOrDefaultAsync(t => t.Name == "Documentation");
+                    var meetingTag = await context.Tags.FirstOrDefaultAsync(t => t.Name == "Meeting");
+                    var bugTag = await context.Tags.FirstOrDefaultAsync(t => t.Name == "Bug");
+                    var featureTag = await context.Tags.FirstOrDefaultAsync(t => t.Name == "Feature");
+                    var refactoringTag = await context.Tags.FirstOrDefaultAsync(t => t.Name == "Refactoring");
+
 
                     // Seed Tasks and Subtasks
                     if (!context.TaskItems.Any() || !context.SubTaskItems.Any())
@@ -117,8 +155,12 @@ namespace TaskManagementApi.Infrastructure
                                 CreatedAt = DateTime.UtcNow,
                                 UpdatedAt = DateTime.UtcNow,
                                 IsNotificationEnabled = true,
-                                NotificationDateTime = DateTime.UtcNow.AddDays(13)
+                                NotificationDateTime = DateTime.UtcNow.AddDays(13),
+                                Priority = TaskPriority.High
                             };
+                            adminAssignedTask1.TaskItemTags.Add(new TaskItemTag { Tag = backendTag! });
+                            adminAssignedTask1.TaskItemTags.Add(new TaskItemTag { Tag = featureTag! });
+
 
                             var adminAssignedTask2 = new TaskItem
                             {
@@ -131,8 +173,12 @@ namespace TaskManagementApi.Infrastructure
                                 CreatedAt = DateTime.UtcNow,
                                 UpdatedAt = DateTime.UtcNow,
                                 IsNotificationEnabled = true,
-                                NotificationDateTime = DateTime.UtcNow.AddDays(6)
+                                NotificationDateTime = DateTime.UtcNow.AddDays(6),
+                                Priority = TaskPriority.Critical
                             };
+                            adminAssignedTask2.TaskItemTags.Add(new TaskItemTag { Tag = databaseTag! });
+                            adminAssignedTask2.TaskItemTags.Add(new TaskItemTag { Tag = documentationTag! });
+
 
                             // Tasks assigned by Team Lead
                             var tlAssignedTask1 = new TaskItem
@@ -146,8 +192,12 @@ namespace TaskManagementApi.Infrastructure
                                 CreatedAt = DateTime.UtcNow,
                                 UpdatedAt = DateTime.UtcNow,
                                 IsNotificationEnabled = true,
-                                NotificationDateTime = DateTime.UtcNow.AddDays(4)
+                                NotificationDateTime = DateTime.UtcNow.AddDays(4),
+                                Priority = TaskPriority.High
                             };
+                            tlAssignedTask1.TaskItemTags.Add(new TaskItemTag { Tag = backendTag! });
+                            tlAssignedTask1.TaskItemTags.Add(new TaskItemTag { Tag = featureTag! });
+
 
                             var tlAssignedTask2 = new TaskItem
                             {
@@ -160,8 +210,11 @@ namespace TaskManagementApi.Infrastructure
                                 CreatedAt = DateTime.UtcNow,
                                 UpdatedAt = DateTime.UtcNow,
                                 IsNotificationEnabled = true,
-                                NotificationDateTime = DateTime.UtcNow.AddDays(2)
+                                NotificationDateTime = DateTime.UtcNow.AddDays(2),
+                                Priority = TaskPriority.Medium
                             };
+                            tlAssignedTask2.TaskItemTags.Add(new TaskItemTag { Tag = testingTag! });
+
 
                             // Self-assigned tasks
                             var dev1SelfTask = new TaskItem
@@ -174,8 +227,12 @@ namespace TaskManagementApi.Infrastructure
                                 AssignedByUserId = null,
                                 CreatedAt = DateTime.UtcNow,
                                 UpdatedAt = DateTime.UtcNow,
-                                IsNotificationEnabled = false
+                                IsNotificationEnabled = false,
+                                Priority = TaskPriority.Low
                             };
+                            dev1SelfTask.TaskItemTags.Add(new TaskItemTag { Tag = refactoringTag! });
+                            dev1SelfTask.TaskItemTags.Add(new TaskItemTag { Tag = backendTag! });
+
 
                             var qa1SelfTask = new TaskItem
                             {
@@ -188,8 +245,12 @@ namespace TaskManagementApi.Infrastructure
                                 CreatedAt = DateTime.UtcNow,
                                 UpdatedAt = DateTime.UtcNow,
                                 IsNotificationEnabled = true,
-                                NotificationDateTime = DateTime.UtcNow.AddDays(1).AddHours(10) // Tomorrow at 10 AM
+                                NotificationDateTime = DateTime.UtcNow.AddDays(1).AddHours(10), // Tomorrow at 10 AM
+                                Priority = TaskPriority.High
                             };
+                            qa1SelfTask.TaskItemTags.Add(new TaskItemTag { Tag = testingTag! });
+                            qa1SelfTask.TaskItemTags.Add(new TaskItemTag { Tag = bugTag! });
+
 
                             var pmSelfTask = new TaskItem
                             {
@@ -202,8 +263,13 @@ namespace TaskManagementApi.Infrastructure
                                 CreatedAt = DateTime.UtcNow,
                                 UpdatedAt = DateTime.UtcNow,
                                 IsNotificationEnabled = true,
-                                NotificationDateTime = DateTime.UtcNow.AddHours(2) // In 2 hours
+                                NotificationDateTime = DateTime.UtcNow.AddHours(2), // In 2 hours
+                                Priority = TaskPriority.Critical
                             };
+                            pmSelfTask.TaskItemTags.Add(new TaskItemTag { Tag = meetingTag! });
+                            pmSelfTask.TaskItemTags.Add(new TaskItemTag { Tag = documentationTag! });
+                            pmSelfTask.TaskItemTags.Add(new TaskItemTag { Tag = urgentTag! });
+
 
                             context.TaskItems.AddRange(adminAssignedTask1, adminAssignedTask2, tlAssignedTask1, tlAssignedTask2, dev1SelfTask, qa1SelfTask, pmSelfTask);
                             await context.SaveChangesAsync(); // Save tasks to get their IDs
@@ -218,7 +284,8 @@ namespace TaskManagementApi.Infrastructure
                                 ParentTaskId = adminAssignedTask1.Id,
                                 UserId = devUser1.Id,
                                 CreatedAt = DateTime.UtcNow,
-                                UpdatedAt = DateTime.UtcNow
+                                UpdatedAt = DateTime.UtcNow,
+                                Priority =  TaskPriority.High
                             };
                             var subTask1_2 = new SubTaskItem
                             {
@@ -229,7 +296,8 @@ namespace TaskManagementApi.Infrastructure
                                 ParentTaskId = adminAssignedTask1.Id,
                                 UserId = devUser1.Id,
                                 CreatedAt = DateTime.UtcNow,
-                                UpdatedAt = DateTime.UtcNow
+                                UpdatedAt = DateTime.UtcNow,
+                                Priority = TaskPriority.Medium
                             };
 
                             var subTask3_1 = new SubTaskItem
@@ -241,7 +309,8 @@ namespace TaskManagementApi.Infrastructure
                                 ParentTaskId = tlAssignedTask1.Id,
                                 UserId = devUser2.Id,
                                 CreatedAt = DateTime.UtcNow,
-                                UpdatedAt = DateTime.UtcNow
+                                UpdatedAt = DateTime.UtcNow,
+                                Priority = TaskPriority.Medium
                             };
                             var subTask3_2 = new SubTaskItem
                             {
@@ -252,7 +321,8 @@ namespace TaskManagementApi.Infrastructure
                                 ParentTaskId = tlAssignedTask1.Id,
                                 UserId = devUser2.Id,
                                 CreatedAt = DateTime.UtcNow,
-                                UpdatedAt = DateTime.UtcNow
+                                UpdatedAt = DateTime.UtcNow,
+                                Priority = TaskPriority.High
                             };
 
                             var subTask4_1 = new SubTaskItem
@@ -264,7 +334,8 @@ namespace TaskManagementApi.Infrastructure
                                 ParentTaskId = tlAssignedTask2.Id,
                                 UserId = qaUser1.Id,
                                 CreatedAt = DateTime.UtcNow,
-                                UpdatedAt = DateTime.UtcNow
+                                UpdatedAt = DateTime.UtcNow,
+                                Priority = TaskPriority.Critical
                             };
 
                             context.SubTaskItems.AddRange(subTask1_1, subTask1_2, subTask3_1, subTask3_2, subTask4_1);

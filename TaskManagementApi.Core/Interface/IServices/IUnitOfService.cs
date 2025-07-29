@@ -14,5 +14,6 @@ namespace TaskManagementApi.Core.Interface
         IAuthService AuthService { get; }
 
         ISubtaskItemService SubtaskItemService { get; }
+        ITagService TagService { get; }
     }
 }

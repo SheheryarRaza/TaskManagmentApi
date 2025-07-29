@@ -22,8 +22,6 @@ namespace TaskManagementApi.Presentation.Controllers
             _userRepository = userRepository;
         }
 
-        // GET: api/RoleManagement/roles
-        // Get all available roles in the system
         [HttpGet("roles")]
         public async Task<ActionResult<IEnumerable<string>>> GetAllRoles()
         {
@@ -31,19 +29,14 @@ namespace TaskManagementApi.Presentation.Controllers
             return Ok(roles);
         }
 
-        // GET: api/RoleManagement/users/{userId}/roles
-        // Get roles for a specific user
         [HttpGet("users/{userId}/roles")]
         public async Task<ActionResult<IEnumerable<string>>> GetUserRoles(string userId)
         {
-            // MODIFIED: Use the new GetUserRolesAsync(string userId) method from AuthService
             var roles = await _unitOfService.AuthService.GetUserRolesAsync(userId);
 
             return Ok(roles);
         }
 
-        // POST: api/RoleManagement/users/{userId}/roles
-        // Add a user to a specific role
         [HttpPost("users/{userId}/roles")]
         public async Task<IActionResult> AddUserToRole(string userId, [FromBody] DTO_UpdateUserRole roleUpdateDto)
         {
@@ -62,8 +55,6 @@ namespace TaskManagementApi.Presentation.Controllers
             return Ok(new { message });
         }
 
-        // DELETE: api/RoleManagement/users/{userId}/roles/{roleName}
-        // Remove a user from a specific role
         [HttpDelete("users/{userId}/roles/{roleName}")]
         public async Task<IActionResult> RemoveUserFromRole(string userId, string roleName)
         {
