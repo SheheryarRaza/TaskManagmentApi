@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TaskManagementApi.Core.Enumerations;
 
 namespace TaskManagementApi.Core.DTOs.DTO_Tasks
 {
@@ -24,5 +25,9 @@ namespace TaskManagementApi.Core.DTOs.DTO_Tasks
         public string? AssignedToUserName { get; set; }
         public string? AssignedByUserId { get; set; } // The ID of the user who assigned it
         public string? AssignedByUserName { get; set; }
+
+        public TaskPriority Priority { get; set; }
+
+        public List<string> Tags { get; set; } = new List<string>();
     }
 }

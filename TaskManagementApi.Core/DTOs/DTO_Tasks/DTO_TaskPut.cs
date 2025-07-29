@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TaskManagementApi.Core.Enumerations;
 
 namespace TaskManagementApi.Core.DTOs.DTO_Tasks
 {
@@ -23,5 +24,8 @@ namespace TaskManagementApi.Core.DTOs.DTO_Tasks
         public DateTime? NotificationDateTime { get; set; }
 
         public string? AssignedToUserId { get; set; }
+
+        public TaskPriority Priority { get; set; }
+        public List<string> Tags { get; set; } = new List<string>();
     }
 }

@@ -57,6 +57,7 @@ namespace TaskManagementApi.Infrastructure
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<ITagRepository, TagRepository>();
 
             return services;
         }

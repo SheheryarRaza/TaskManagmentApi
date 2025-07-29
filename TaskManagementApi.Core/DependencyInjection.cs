@@ -20,6 +20,7 @@ namespace TaskManagementApi.Core
             services.AddScoped<ITaskItemService, TaskItemService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ISubtaskItemService, SubtaskItemService>();
+            services.AddScoped<ITagService, TagService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IUnitOfService, UnitOfService>();
             services.AddAutoMapper(Assembly.GetExecutingAssembly());

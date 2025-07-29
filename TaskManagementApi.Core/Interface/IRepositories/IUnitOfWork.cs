@@ -11,6 +11,8 @@ namespace TaskManagementApi.Core.Interface.IRepositories
         ITaskItemRepository TaskItemRepository { get; }
 
         ISubtaskItemRepository SubtaskItemRepository { get; }
+
+        ITagRepository TagRepository { get; }
         int SaveChanges();
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
