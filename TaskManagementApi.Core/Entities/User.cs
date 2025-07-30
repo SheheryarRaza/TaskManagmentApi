@@ -11,7 +11,7 @@ namespace TaskManagementApi.Core.Entities
     public class User : IdentityUser
     {
         [Required]
-        [StringLength(256)] // Max length for UserName in IdentityUser
+        [StringLength(256)]
         public override string UserName
         {
             get => base.UserName!;
@@ -19,7 +19,7 @@ namespace TaskManagementApi.Core.Entities
         }
 
         [Required]
-        [StringLength(256)] // Max length for Email in IdentityUser
+        [StringLength(256)]
         public override string Email
         {
             get => base.Email!;

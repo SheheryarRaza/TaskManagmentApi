@@ -71,19 +71,17 @@ namespace TaskManagementApi.Core.Services
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]!);
-            var roles = await _userManager.GetRolesAsync(user); // Get user roles
+            var roles = await _userManager.GetRolesAsync(user);
 
-            // NEW: Log the roles retrieved
             _logger.LogInformation($"Login: User '{user.UserName}' (ID: {user.Id}) retrieved roles: {string.Join(", ", roles)}");
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id), // User ID
-                new Claim(ClaimTypes.Email, user.Email!), // User Email
-                new Claim(ClaimTypes.Name, user.UserName!) // User Name
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Email, user.Email!),
+                new Claim(ClaimTypes.Name, user.UserName!)
             };
 
-            // Add roles as claims
             foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
@@ -91,10 +89,10 @@ namespace TaskManagementApi.Core.Services
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddHours(1), // Token expiry time
+                Expires = DateTime.UtcNow.AddHours(1),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
-                Issuer = _configuration["Jwt:Issuer"], // Ensure Jwt:Issuer is in appsettings.json
-                Audience = _configuration["Jwt:Audience"] // Ensure Jwt:Audience is in appsettings.json
+                Issuer = _configuration["Jwt:Issuer"],
+                Audience = _configuration["Jwt:Audience"]
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return (true, tokenHandler.WriteToken(token), "Login successful.");
@@ -111,8 +109,8 @@ namespace TaskManagementApi.Core.Services
             var user = new User
             {
                 Email = email,
-                UserName = email, // You can customize this as needed
-                EmailConfirmed = false // Set to true if you want to require email confirmation
+                UserName = email,
+                EmailConfirmed = false
             };
 
             var result = await _userRepository.CreateUserAsync(user, password);
@@ -242,7 +240,7 @@ namespace TaskManagementApi.Core.Services
             var user = await _userRepository.GetUserByIdAsync(userId);
             if (user == null)
             {
-                return new List<string>(); // Return empty list if user not found
+                return new List<string>();
             }
             return await _userRepository.GetUserRolesAsync(user);
         }
@@ -287,7 +285,6 @@ namespace TaskManagementApi.Core.Services
             var assignRoleResult = await _userManager.AddToRoleAsync(user, roleName);
             if (!assignRoleResult.Succeeded)
             {
-                // If role assignment fails, consider deleting the newly created user
                 await _userManager.DeleteAsync(user);
                 return (false, $"User created but failed to assign role: {string.Join("; ", assignRoleResult.Errors.Select(e => e.Description))}");
             }

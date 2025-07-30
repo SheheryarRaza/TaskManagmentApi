@@ -26,14 +26,15 @@ namespace TaskManagementApi.Core.Interface
         Task<IList<string>> GetAllRolesAsync();
 
         Task<User?> GetUserByIdAsync(string userId);
+
         Task<IList<string>> GetUserRolesAsync(string userId);
+
         Task<(bool Success, string? Message)> AddUserToRoleAsync(string userId, string roleName);
+
         Task<(bool Success, string? Message)> RemoveUserFromRoleAsync(string userId, string roleName);
 
-        // NEW: Admin functionality to create a new role
         Task<(bool Success, string? Message)> CreateRoleAsync(string roleName);
 
-        // NEW: Admin functionality to register a user and assign a role
         Task<(bool Success, string? Message)> AdminRegisterUserAndAssignRoleAsync(string email, string password, string roleName);
 
 

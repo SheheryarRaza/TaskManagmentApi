@@ -23,7 +23,7 @@ namespace TaskManagementApi.Core.DTOs.DTO_Tasks
         public DateTime? NotificationDateTime { get; set; }
         public bool IsNotified { get; set; }
         public string? AssignedToUserName { get; set; }
-        public string? AssignedByUserId { get; set; } // The ID of the user who assigned it
+        public string? AssignedByUserId { get; set; } 
         public string? AssignedByUserName { get; set; }
 
         public TaskPriority Priority { get; set; }

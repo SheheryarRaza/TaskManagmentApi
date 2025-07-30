@@ -11,9 +11,11 @@ namespace TaskManagementApi.Core.Interface
     public interface IUnitOfService
     {
         ITaskItemService TaskItemService { get; }
+
         IAuthService AuthService { get; }
 
         ISubtaskItemService SubtaskItemService { get; }
+
         ITagService TagService { get; }
     }
 }

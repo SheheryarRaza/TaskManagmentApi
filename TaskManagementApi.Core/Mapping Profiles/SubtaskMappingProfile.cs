@@ -15,8 +15,8 @@ namespace TaskManagementApi.Core.Mapping_Profiles
         {
             CreateMap<DTO_SubtaskPost, SubTaskItem>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.ParentTaskId, opt => opt.Ignore()) // Set in service
-                .ForMember(dest => dest.UserId, opt => opt.Ignore()) // Set in service
+                .ForMember(dest => dest.ParentTaskId, opt => opt.Ignore())
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.IsCompleted, opt => opt.MapFrom(src => false))
@@ -25,15 +25,15 @@ namespace TaskManagementApi.Core.Mapping_Profiles
                 .ForMember(dest => dest.IsDeleted, opt => opt.MapFrom(src => false))
                 .ForMember(dest => dest.DeletedAt, opt => opt.Ignore());
 
-            // Mapping from SubTaskItem entity to SubTaskGetDto for retrieval
+
             CreateMap<SubTaskItem, DTO_SubtaskGet>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.UserName));
 
-            // Mapping from SubTaskPutDto to SubTaskItem entity for updates
+
             CreateMap<DTO_SubtaskPut, SubTaskItem>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.ParentTaskId, opt => opt.Ignore()) // Should not be updated
-                .ForMember(dest => dest.UserId, opt => opt.Ignore()) // Should not be updated
+                .ForMember(dest => dest.ParentTaskId, opt => opt.Ignore())
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.ParentTask, opt => opt.Ignore())
