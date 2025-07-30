@@ -15,7 +15,8 @@ namespace TaskManagementApi.Core.Interface.IServices
         Task<DTO_SubtaskGet?> GetSubTaskByIdAsync(int id);
         Task<SubTaskItem> CreateSubTaskAsync(int parentTaskId, DTO_SubtaskPost subTaskPost, string currentUserId);
         Task<bool> UpdateSubTaskAsync(int id, DTO_SubtaskPut subTaskPut, string currentUserId);
-        Task<bool> DeleteSubTaskAsync(int id, string currentUserId); // User can only delete their own subtasks
+        Task<bool> DeleteSubTaskAsync(int id, string currentUserId); 
+
         Task<bool> RestoreSubTaskAsync(int id, string currentUserId);
     }
 }

@@ -13,8 +13,8 @@ namespace TaskManagementApi.Core.Interface.IRepositories
         Task<SubTaskItem?> GetSubTaskByIdAsync(int id);
         Task AddSubTaskAsync(SubTaskItem subTaskItem);
         Task UpdateSubTaskAsync(SubTaskItem subTaskItem);
-        Task DeleteSubTaskAsync(SubTaskItem subTaskItem); // Soft delete
-        Task RestoreSubTaskAsync(SubTaskItem subTaskItem); // Restore soft-deleted
+        Task DeleteSubTaskAsync(SubTaskItem subTaskItem);
+        Task RestoreSubTaskAsync(SubTaskItem subTaskItem);
         Task<bool> SubTaskItemExistsAsync(int id);
     }
 }

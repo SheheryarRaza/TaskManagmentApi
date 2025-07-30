@@ -42,7 +42,6 @@ namespace TaskManagementApi.Core.DTOs.DTO_Subtask
         [FromQuery(Name = "pageSize")]
         public int PageSize { get; set; } = 10;
 
-        // Max page size to prevent abuse
         private const int MaxPageSize = 50;
         public int AdjustedPageSize
         {

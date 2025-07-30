@@ -15,7 +15,6 @@ namespace TaskManagementApi.Core.Entities
         [StringLength(50)]
         public string Name { get; set; } = string.Empty;
 
-        // Navigation property for the many-to-many relationship with TaskItem
         public ICollection<TaskItemTag> TaskItemTags { get; set; } = new List<TaskItemTag>();
     }
 }
